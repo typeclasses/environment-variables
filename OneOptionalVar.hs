@@ -1,10 +1,10 @@
 module OneOptionalVar where
 
-import Data.Functor
-import Data.Maybe
+import Data.Functor (Functor)
+import Data.Maybe (Maybe)
 import Data.Text (Text)
 
-import Name
+import Name (Name)
 
 data OneOptionalVar a = OneOptionalVar Name a (Text -> Maybe a)
     deriving stock Functor

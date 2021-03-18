@@ -1,25 +1,24 @@
 module Readable (Readable (readVar)) where
 
-import Data.Function
-import Data.Functor
-import Data.Functor.Compose
-import Data.Maybe
-import Data.String
-import Data.Validation
+import Data.Function ((.), ($))
+import Data.Functor (fmap)
+import Data.Functor.Compose (Compose (Compose), getCompose)
+import Data.Maybe (Maybe, maybe)
+import Data.Validation (Validation (Success, Failure), bindValidation)
 
 import qualified Control.Applicative.Free.Final as Free
 
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import EnvFunctor
+import EnvFunctor (EnvFunctor, lookupEnv)
 import MultiVar (MultiVar (..))
-import Name
+import Name (Name)
 import OneOptionalVar (OneOptionalVar (..))
 import OneRequiredVar (OneRequiredVar (..))
 import OneVar (OneVar)
 import qualified OneVar
-import Problems
+import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 class Readable v a | v -> a
   where
@@ -38,17 +37,19 @@ justOrInvalid = justOr VarInvalid
 
 instance Readable Name Text
   where
-    readVar name = justOrMissing name <$> lookupEnv name
+    readVar name = fmap (justOrMissing name) $ lookupEnv name
 
 instance Readable (OneRequiredVar a) a
   where
     readVar (OneRequiredVar name parse) =
-      (`bindValidation` (justOrInvalid name . parse)) <$> readVar name
+        fmap (`bindValidation` (justOrInvalid name . parse)) $
+            readVar name
 
 instance Readable (OneOptionalVar a) a
   where
     readVar (OneOptionalVar name def parse) =
-        maybe (Success def) (justOrInvalid name . parse) <$> lookupEnv name
+        fmap (maybe (Success def) (justOrInvalid name . parse)) $
+            lookupEnv name
 
 instance Readable (OneVar a) a
   where

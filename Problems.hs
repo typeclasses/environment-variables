@@ -4,18 +4,18 @@ import Name (Name, nameText)
 
 import Control.Exception (Exception (displayException))
 import Data.Data (Data)
-import Data.Eq
-import Data.Foldable
-import Data.Function
-import Data.Hashable
-import Data.Monoid
-import Data.Ord
-import Data.Semigroup
-import Data.String
+import Data.Eq (Eq)
+import Data.Foldable (fold)
+import Data.Function (($), (.))
+import Data.Hashable (Hashable)
+import Data.Monoid (Monoid)
+import Data.Ord (Ord)
+import Data.Semigroup (Semigroup, (<>))
+import Data.String (IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Prelude (Enum, Bounded)
-import Text.Show
+import Text.Show (Show)
 
 import qualified Data.List as List
 

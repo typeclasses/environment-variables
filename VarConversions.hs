@@ -7,9 +7,9 @@ import OneRequiredVar (OneRequiredVar (OneRequiredVar))
 import OneVar (OneVar)
 import qualified OneVar
 
-import Data.Function
-import Data.Functor
-import Data.Maybe
+import Data.Function ((.))
+import Data.Functor (fmap)
+import Data.Maybe (Maybe (..))
 
 required :: OneOptionalVar a -> OneRequiredVar a
 required (OneOptionalVar x _ f) = OneRequiredVar x f

@@ -1,10 +1,10 @@
 module OneRequiredVar where
 
-import Data.Functor
-import Data.Maybe
+import Data.Functor (Functor)
+import Data.Maybe (Maybe)
 import Data.Text (Text)
 
-import Name
+import Name (Name)
 
 data OneRequiredVar a = OneRequiredVar Name (Text -> Maybe a)
     deriving stock Functor
