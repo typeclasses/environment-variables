@@ -12,7 +12,7 @@ module Env
     -- * Var names
     Name,
     -- * What can go wrong
-    EnvFailure, OneEnvFailure, Problem (..),
+    EnvFailure, OneEnvFailure (..), Problem (..),
     -- * Mock environments
     EnvData (..)
   ) where
@@ -24,6 +24,6 @@ import MultiVar (MultiVar)
 import Name (Name)
 import OneOptionalVar (OneOptionalVar)
 import OneRequiredVar (OneRequiredVar, var)
-import Problems (EnvFailure, OneEnvFailure, Problem (..))
+import Problems (EnvFailure, OneEnvFailure (..), Problem (..))
 import Readable (Readable (..))
 import VarConversions (optional, optionalMaybe, ToMulti (..))
