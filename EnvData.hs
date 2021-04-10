@@ -5,13 +5,16 @@ import Name (Name)
 import Data.Data (Data)
 import Data.Eq (Eq)
 import Data.Function ((.))
+import Data.Functor (fmap)
 import Data.Hashable (Hashable)
 import Data.Maybe (Maybe)
 import Data.Monoid (Monoid)
 import Data.Ord (Ord)
 import Data.Semigroup (Semigroup)
+import Data.String (fromString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import System.IO (IO)
 import Text.Show (Show)
 
 import qualified Data.List as List
@@ -21,6 +24,8 @@ import qualified Data.HashMap.Strict as HashMap
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+
+import qualified System.Environment as Env
 
 data Item = Item Name Text
     deriving stock (Eq, Ord, Show, Data, Generic)
@@ -42,3 +47,7 @@ envDataToList = List.map (\(n, v) -> Item n v) . Map.toList . envDataMap
 
 listToEnvData :: [Item] -> EnvData
 listToEnvData = EnvData . Map.fromList . List.map (\(Item n v) -> (n, v))
+
+-- | Reads the process's entire environment at once.
+getEnvData :: IO EnvData
+getEnvData = fmap (EnvList . List.map (\(n, v) -> Item (fromString n) (fromString v))) Env.getEnvironment

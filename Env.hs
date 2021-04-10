@@ -14,10 +14,10 @@ module Env
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Mock environments
-    EnvData, pattern EnvList, Item (..)
+    EnvData, pattern EnvList, Item (..), getEnvData
   ) where
 
-import EnvData (EnvData, pattern EnvList, Item (..))
+import EnvData (EnvData, pattern EnvList, Item (..), getEnvData)
 import EnvFunctor (EnvFunctor (..))
 import IO (readVar)
 import MultiVar (MultiVar)
