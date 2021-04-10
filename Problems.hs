@@ -46,6 +46,7 @@ instance Exception EnvFailure
   where
     displayException = LazyText.unpack . TextBuilder.toLazyText . envFailureMessage
 
+pattern EnvFailureList :: [OneEnvFailure] -> EnvFailure
 pattern EnvFailureList xs <- (envFailureToList -> xs)
   where
     EnvFailureList = listToEnvFailure

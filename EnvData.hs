@@ -38,6 +38,7 @@ newtype EnvData = EnvData { envDataMap :: Map Name Text }
 lookupEnvData :: Name -> EnvData -> Maybe Text
 lookupEnvData n (EnvData m) = Map.lookup n m
 
+pattern EnvList :: [Item] -> EnvData
 pattern EnvList xs <- (envDataToList -> xs)
   where
     EnvList xs = listToEnvData xs
