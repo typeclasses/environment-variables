@@ -22,17 +22,15 @@ import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 class Readable v a | v -> a
   where
-    readVar :: EnvFunctor f => v -> f (Result a)
+    readVar :: EnvFunctor f => v -> f (Validation EnvFailure a)
 
-type Result a = Validation EnvFailure a
-
-justOr :: Problem -> Name -> Maybe a -> Result a
+justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
 
-justOrMissing :: Name -> Maybe a -> Result a
+justOrMissing :: Name -> Maybe a -> Validation EnvFailure a
 justOrMissing = justOr VarMissing
 
-justOrInvalid :: Name -> Maybe a -> Result a
+justOrInvalid :: Name -> Maybe a -> Validation EnvFailure a
 justOrInvalid = justOr VarInvalid
 
 instance Readable Name Text
@@ -60,5 +58,5 @@ instance Readable (OneVar a) a
 
 instance Readable (MultiVar v) v
   where
-    readVar :: forall f a. EnvFunctor f => MultiVar a -> f (Result a)
+    readVar :: forall f a. EnvFunctor f => MultiVar a -> f (Validation EnvFailure a)
     readVar (MultiVar a) = getCompose $ Free.runAp (Compose . readVar) (Free.Ap a)
