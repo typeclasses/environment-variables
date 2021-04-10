@@ -2,7 +2,7 @@ module VarConversions where
 
 import MultiVar (MultiVar)
 import qualified MultiVar
-import OneOptionalVar (OneOptionalVar (OneOptionalVar))
+import OneOptionalVar (Opt (Opt))
 import OneRequiredVar (Var (Var))
 import OneVar (OneVar)
 import qualified OneVar
@@ -11,14 +11,14 @@ import Data.Function ((.))
 import Data.Functor (fmap)
 import Data.Maybe (Maybe (..))
 
-required :: OneOptionalVar a -> Var a
-required (OneOptionalVar x _ f) = Var x f
+required :: Opt a -> Var a
+required (Opt x _ f) = Var x f
 
-optional :: a -> Var a -> OneOptionalVar a
-optional d (Var x f) = OneOptionalVar x d f
+optional :: a -> Var a -> Opt a
+optional d (Var x f) = Opt x d f
 
-optionalMaybe :: Var a -> OneOptionalVar (Maybe a)
-optionalMaybe (Var x f) = OneOptionalVar x Nothing (fmap Just . f)
+optionalMaybe :: Var a -> Opt (Maybe a)
+optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
 
 class ToOneVar v
   where
@@ -28,9 +28,9 @@ instance ToOneVar Var
   where
     oneVar (Var x f) = OneVar.Required x f
 
-instance ToOneVar OneOptionalVar
+instance ToOneVar Opt
   where
-    oneVar (OneOptionalVar x d f) = OneVar.Optional x d f
+    oneVar (Opt x d f) = OneVar.Optional x d f
 
 class ToMulti v
   where
@@ -44,6 +44,6 @@ instance ToMulti Var
   where
     multi = multi . oneVar
 
-instance ToMulti OneOptionalVar
+instance ToMulti Opt
   where
     multi = multi . oneVar
