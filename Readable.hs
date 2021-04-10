@@ -5,6 +5,9 @@ import Data.Functor (fmap)
 import Data.Functor.Compose (Compose (Compose), getCompose)
 import Data.Maybe (Maybe, maybe)
 import Data.Validation (Validation (Success, Failure), bindValidation)
+import System.IO (IO)
+import Data.Map (Map)
+import Data.HashMap.Strict (HashMap)
 
 import qualified Control.Applicative.Free.Final as Free
 
@@ -20,9 +23,18 @@ import OneVar (OneVar)
 import qualified OneVar
 import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
-class Readable v a | v -> a
+{- |
+
+Type parameters:
+
+  - @var@ - The type of variable you want to read: 'Name', 'OneRequiredVar', 'OneOptionalVar', or 'MultiVar'.
+  - @value@ - What type of value is produced when an environment variable is successfully read.
+  - @context@ - Normally 'IO', but possibly @('Map' 'Name' 'Text' ->)@ or @('HashMap' 'Name' 'Text' ->)@ if you are reading from a mock environment.
+
+-}
+class Readable var value | var -> value
   where
-    readVar :: EnvFunctor f => v -> f (Validation EnvFailure a)
+    readVar :: EnvFunctor context => var -> context (Validation EnvFailure value)
 
 justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
