@@ -6,8 +6,8 @@ import Data.Text (Text)
 
 import Name (Name)
 
-data OneRequiredVar a = OneRequiredVar Name (Text -> Maybe a)
+data Var a = Var Name (Text -> Maybe a)
     deriving stock Functor
 
-var :: Name -> (Text -> Maybe a) -> OneRequiredVar a
-var = OneRequiredVar
+var :: Name -> (Text -> Maybe a) -> Var a
+var = Var

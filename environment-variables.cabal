@@ -7,7 +7,7 @@ build-type: Simple
 
 description:
     .
-    The 'OneRequiredVar' and 'OneOptionalVar' types represent a
+    The 'Var' and 'OneOptionalVar' types represent a
     variable name and a parser to turn a string from the
     environment into a Haskell value, where the case in which
     the variable name is not defined in the environment either

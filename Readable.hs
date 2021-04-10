@@ -18,7 +18,7 @@ import EnvFunctor (EnvFunctor, lookupEnv)
 import MultiVar (MultiVar (..))
 import Name (Name)
 import OneOptionalVar (OneOptionalVar (..))
-import OneRequiredVar (OneRequiredVar (..))
+import OneRequiredVar (Var (..))
 import OneVar (OneVar)
 import qualified OneVar
 import Problems (EnvFailure, Problem (..), oneProblemFailure)
@@ -27,7 +27,7 @@ import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 Type parameters:
 
-  - @var@ - The type of variable you want to read: 'Name', 'OneRequiredVar', 'OneOptionalVar', or 'MultiVar'.
+  - @var@ - The type of variable you want to read: 'Name', 'Var', 'OneOptionalVar', or 'MultiVar'.
   - @value@ - What type of value is produced when an environment variable is successfully read.
   - @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment.
 
@@ -49,9 +49,9 @@ instance Readable Name Text
   where
     readVar name = fmap (justOrMissing name) $ lookupEnv name
 
-instance Readable (OneRequiredVar a) a
+instance Readable (Var a) a
   where
-    readVar (OneRequiredVar name parse) =
+    readVar (Var name parse) =
         fmap (`bindValidation` (justOrInvalid name . parse)) $
             readVar name
 
@@ -65,7 +65,7 @@ instance Readable (OneVar a) a
   where
     readVar =
       \case
-        OneVar.Required n p -> readVar (OneRequiredVar n p)
+        OneVar.Required n p -> readVar (Var n p)
         OneVar.Optional n d p -> readVar (OneOptionalVar n d p)
 
 instance Readable (MultiVar v) v

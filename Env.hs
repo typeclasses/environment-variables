@@ -2,7 +2,7 @@ module Env
   (
     -- * Defining vars
     -- ** Basics
-    var, OneRequiredVar,
+    var, Var,
     -- ** Optional
     optional, optionalMaybe, OneOptionalVar,
     -- ** Multiple
@@ -23,7 +23,7 @@ import IO (readVar)
 import MultiVar (MultiVar)
 import Name (Name)
 import OneOptionalVar (OneOptionalVar)
-import OneRequiredVar (OneRequiredVar, var)
+import OneRequiredVar (Var, var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..))
 import Readable (Readable (..))
 import VarConversions (optional, optionalMaybe, ToMulti (..))
