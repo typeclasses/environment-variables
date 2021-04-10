@@ -9,8 +9,8 @@ import qualified Control.Applicative.Free.Final as Free
 
 import OneVar (OneVar)
 
-newtype MultiVar a = MultiVar (forall g. Applicative g => (forall x. OneVar x -> g x) -> g a)
+newtype Multi a = Multi (forall g. Applicative g => (forall x. OneVar x -> g x) -> g a)
     deriving (Functor, Applicative) via (Free.Ap OneVar)
 
-multi :: OneVar a -> MultiVar a
+multi :: OneVar a -> Multi a
 multi = coerce . Free.liftAp

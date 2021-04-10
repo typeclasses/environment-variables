@@ -1,6 +1,6 @@
 module VarConversions where
 
-import MultiVar (MultiVar)
+import MultiVar (Multi)
 import qualified MultiVar
 import OneOptionalVar (Opt (Opt))
 import OneRequiredVar (Var (Var))
@@ -34,7 +34,7 @@ instance ToOneVar Opt
 
 class ToMulti v
   where
-    multi :: v a -> MultiVar a
+    multi :: v a -> Multi a
 
 instance ToMulti OneVar
   where

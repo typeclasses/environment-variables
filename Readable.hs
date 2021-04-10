@@ -15,7 +15,7 @@ import qualified Data.Text as Text
 
 import EnvData (EnvData)
 import EnvFunctor (EnvFunctor, lookupEnv)
-import MultiVar (MultiVar (..))
+import MultiVar (Multi (..))
 import Name (Name)
 import OneOptionalVar (Opt (..))
 import OneRequiredVar (Var (..))
@@ -68,7 +68,7 @@ instance Readable (OneVar a) a
         OneVar.Required n p -> readVar (Var n p)
         OneVar.Optional n d p -> readVar (Opt n d p)
 
-instance Readable (MultiVar v) v
+instance Readable (Multi v) v
   where
-    readVar :: forall f a. EnvFunctor f => MultiVar a -> f (Validation EnvFailure a)
-    readVar (MultiVar a) = getCompose $ Free.runAp (Compose . readVar) (Free.Ap a)
+    readVar :: forall f a. EnvFunctor f => Multi a -> f (Validation EnvFailure a)
+    readVar (Multi a) = getCompose $ Free.runAp (Compose . readVar) (Free.Ap a)

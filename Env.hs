@@ -6,7 +6,7 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Opt,
     -- ** Multiple
-    MultiVar, ToMulti (..),
+    Multi, ToMulti (..),
     -- * Using vars
     Readable (..), EnvFunctor (..),
     -- * Var names
@@ -20,7 +20,7 @@ module Env
 import EnvData (EnvData, pattern EnvList, Item (..), getEnvData)
 import EnvFunctor (EnvFunctor (..))
 import IO (readVar)
-import MultiVar (MultiVar)
+import MultiVar (Multi)
 import Name (Name)
 import OneOptionalVar (Opt)
 import OneRequiredVar (Var, var)

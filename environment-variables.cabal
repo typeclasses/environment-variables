@@ -17,7 +17,7 @@ description:
     applications that have some environment requirements in
     common.
     .
-    The 'MultiVar' type represents a way to obtain a value from
+    The 'Multi' type represents a way to obtain a value from
     the environment by inspecting multiple environment variables.
     The advantage of using this type is that you can get more
     complete error output when there are errors related to more
