@@ -46,11 +46,18 @@ instance Exception EnvFailure
   where
     displayException = LazyText.unpack . TextBuilder.toLazyText . envFailureMessage
 
-envFailureList :: EnvFailure -> [(Name, Problem)]
-envFailureList = Map.toList . envFailureMap
+pattern EnvFailureList xs <- (envFailureToList -> xs)
+  where
+    EnvFailureList = listToEnvFailure
+
+envFailureToList :: EnvFailure -> [OneEnvFailure]
+envFailureToList = List.map (\(n, p) -> OneEnvFailure n p) . Map.toList . envFailureMap
+
+listToEnvFailure :: [OneEnvFailure] -> EnvFailure
+listToEnvFailure = EnvFailure . Map.fromList . List.map (\(OneEnvFailure n p) -> (n, p))
 
 envFailureMessage :: EnvFailure -> TextBuilder.Builder
-envFailureMessage = fold . List.intersperse (TextBuilder.fromString " ") . List.map (\(n, p) -> oneFailureMessage p n) . envFailureList
+envFailureMessage = fold . List.intersperse (TextBuilder.fromString " ") . List.map (\(OneEnvFailure n p) -> oneFailureMessage p n) . envFailureToList
 
 oneFailureMessage :: Problem -> Name -> TextBuilder.Builder
 oneFailureMessage = \case VarMissing -> missingMessage; VarInvalid -> invalidMessage

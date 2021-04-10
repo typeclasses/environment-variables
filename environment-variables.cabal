@@ -46,7 +46,8 @@ library
         FlexibleInstances FunctionalDependencies
         InstanceSigs LambdaCase
         GeneralizedNewtypeDeriving NoImplicitPrelude
-        OverloadedStrings RankNTypes
+        OverloadedStrings PatternSynonyms RankNTypes
+        ViewPatterns
 
     build-depends:
         base, containers, free, hashable, text,
