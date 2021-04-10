@@ -7,7 +7,6 @@ import Data.Maybe (Maybe, maybe)
 import Data.Validation (Validation (Success, Failure), bindValidation)
 import System.IO (IO)
 import Data.Map (Map)
-import Data.HashMap.Strict (HashMap)
 
 import qualified Control.Applicative.Free.Final as Free
 

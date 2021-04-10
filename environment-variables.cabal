@@ -51,5 +51,4 @@ library
         ViewPatterns
 
     build-depends:
-        base, containers, free, hashable, text,
-        unordered-containers, validation
+        base, containers, free, hashable, text, validation

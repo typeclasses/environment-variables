@@ -19,9 +19,6 @@ import Text.Show (Show)
 
 import qualified Data.List as List
 
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as HashMap
-
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
