@@ -13,6 +13,3 @@ data Opt value =
       value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
     deriving stock Functor
-
-var :: Name -> value -> (Text -> Maybe value) -> Opt value
-var = Opt
