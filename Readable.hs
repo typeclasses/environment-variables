@@ -1,5 +1,6 @@
 module Readable (Readable (readVar)) where
 
+import Control.Applicative (Applicative (..))
 import Data.Function ((.), ($))
 import Data.Functor (fmap)
 import Data.Functor.Compose (Compose (Compose), getCompose)
@@ -7,8 +8,6 @@ import Data.Maybe (Maybe, maybe)
 import Data.Validation (Validation (Success, Failure), bindValidation)
 import System.IO (IO)
 import Data.Map (Map)
-
-import qualified Control.Applicative.Free.Final as Free
 
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -19,15 +18,13 @@ import MultiVar (Multi (..))
 import Name (Name)
 import OneOptionalVar (Opt (..))
 import OneRequiredVar (Var (..))
-import OneVar (OneVar)
-import qualified OneVar
 import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 {- |
 
 Type parameters:
 
-  - @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'MultiVar'.
+  - @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Multi'.
   - @value@ - What type of value is produced when an environment variable is successfully read.
   - @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment.
 
@@ -61,14 +58,10 @@ instance Readable (Opt a) a
         fmap (maybe (Success def) (justOrInvalid name . parse)) $
             lookupEnv name
 
-instance Readable (OneVar a) a
-  where
-    readVar =
-      \case
-        OneVar.Required n p -> readVar (Var n p)
-        OneVar.Optional n d p -> readVar (Opt n d p)
-
 instance Readable (Multi v) v
   where
     readVar :: forall f a. EnvFunctor f => Multi a -> f (Validation EnvFailure a)
-    readVar (Multi a) = getCompose $ Free.runAp (Compose . readVar) (Free.Ap a)
+    readVar = \case
+      Pure x -> pure (Success x)
+      ApVar mf v -> pure (<*>) <*> readVar mf <*> readVar v
+      ApOpt mf v -> pure (<*>) <*> readVar mf <*> readVar v

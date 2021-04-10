@@ -38,17 +38,17 @@ library
 
     other-modules:
         EnvData EnvFunctor IO MultiVar Name
-        OneOptionalVar OneRequiredVar OneVar
+        OneOptionalVar OneRequiredVar
         Problems Readable VarConversions
 
     default-extensions:
         DeriveAnyClass DeriveDataTypeable DeriveFunctor
         DeriveGeneric DerivingStrategies DerivingVia
         FlexibleInstances FunctionalDependencies
-        InstanceSigs LambdaCase
+        GADTs InstanceSigs LambdaCase
         GeneralizedNewtypeDeriving NoImplicitPrelude
         OverloadedStrings PatternSynonyms RankNTypes
-        ViewPatterns
+        ScopedTypeVariables StandaloneDeriving ViewPatterns
 
     build-depends:
-        base, containers, free, hashable, text, validation
+        base, containers, hashable, text, validation
