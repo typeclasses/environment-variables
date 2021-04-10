@@ -2,8 +2,19 @@ module EnvData where
 
 import Name (Name)
 
+import Data.Data (Data)
+import Data.Eq (Eq)
+import Data.Function ((.))
+import Data.Hashable (Hashable)
 import Data.Maybe (Maybe)
+import Data.Monoid (Monoid)
+import Data.Ord (Ord)
+import Data.Semigroup (Semigroup)
 import Data.Text (Text)
+import GHC.Generics (Generic)
+import Text.Show (Show)
+
+import qualified Data.List as List
 
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HashMap
@@ -11,14 +22,23 @@ import qualified Data.HashMap.Strict as HashMap
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
-class EnvData mockEnvironment
-  where
-    lookupEnvData :: Name -> mockEnvironment -> Maybe Text
+data Item = Item Name Text
+    deriving stock (Eq, Ord, Show, Data, Generic)
+    deriving anyclass (Hashable)
 
-instance EnvData (Map Name Text)
-  where
-    lookupEnvData = Map.lookup
+newtype EnvData = EnvData { envDataMap :: Map Name Text }
+    deriving stock (Eq, Ord, Show, Data)
+    deriving newtype (Semigroup, Monoid)
 
-instance EnvData (HashMap Name Text)
+lookupEnvData :: Name -> EnvData -> Maybe Text
+lookupEnvData n (EnvData m) = Map.lookup n m
+
+pattern EnvList xs <- (envDataToList -> xs)
   where
-    lookupEnvData = HashMap.lookup
+    EnvList xs = listToEnvData xs
+
+envDataToList :: EnvData -> [Item]
+envDataToList = List.map (\(n, v) -> Item n v) . Map.toList . envDataMap
+
+listToEnvData :: [Item] -> EnvData
+listToEnvData = EnvData . Map.fromList . List.map (\(Item n v) -> (n, v))

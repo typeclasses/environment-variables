@@ -14,6 +14,7 @@ import qualified Control.Applicative.Free.Final as Free
 import Data.Text (Text)
 import qualified Data.Text as Text
 
+import EnvData (EnvData)
 import EnvFunctor (EnvFunctor, lookupEnv)
 import MultiVar (MultiVar (..))
 import Name (Name)
@@ -29,7 +30,7 @@ Type parameters:
 
   - @var@ - The type of variable you want to read: 'Name', 'OneRequiredVar', 'OneOptionalVar', or 'MultiVar'.
   - @value@ - What type of value is produced when an environment variable is successfully read.
-  - @context@ - Normally 'IO', but possibly @('Map' 'Name' 'Text' ->)@ or @('HashMap' 'Name' 'Text' ->)@ if you are reading from a mock environment.
+  - @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment.
 
 -}
 class Readable var value | var -> value
