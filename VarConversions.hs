@@ -9,9 +9,6 @@ import Data.Function ((.), id)
 import Data.Functor (fmap)
 import Data.Maybe (Maybe (..))
 
-required :: Opt a -> Var a
-required (Opt x _ f) = Var x f
-
 optional :: a -> Var a -> Opt a
 optional d (Var x f) = Opt x d f
 
