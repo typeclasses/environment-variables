@@ -19,9 +19,8 @@ module Env
     Environment, pattern EnvironmentList, Item (..), getEnvironment
   ) where
 
-import EnvData (Environment, pattern EnvironmentList, Item (..), getEnvironment)
-import EnvFunctor (Context (..))
-import Name (Name, pattern NameText, pattern NameString)
+import EnvData (Environment, pattern EnvironmentMap, pattern EnvironmentList, Item (..), getEnvironment)
+import Name (Name, pattern NameText, nameText, pattern NameString)
 import Var (Var (..), Opt (..), var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..), oneProblemFailure)
 
@@ -36,9 +35,24 @@ import Data.Validation (Validation (Success, Failure), bindValidation)
 import System.IO (IO)
 
 import qualified Data.Text as Text
+import qualified Data.Map.Strict as Map
+import qualified System.Environment as Sys
 
 ---
 
+class Applicative context => Context context
+  where
+    lookup :: Name -> context (Maybe Text)
+
+instance Context IO
+  where
+    lookup = fmap (fmap Text.pack) . Sys.lookupEnv . Text.unpack . nameText
+
+instance Context ((->) Environment)
+  where
+    lookup n (EnvironmentMap m) = Map.lookup n m
+
+---
 
 {- | The product of multiplying any number of individual environment variables. Construct 'Product' values using 'lift', 'Applicative' combinators, and string overloading. -}
 
