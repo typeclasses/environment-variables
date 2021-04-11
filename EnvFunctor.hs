@@ -21,11 +21,7 @@ class Applicative context => Context context
 
 instance Context IO
   where
-    lookup =
-        fmap (fmap Text.pack)
-        . Sys.lookupEnv
-        . Text.unpack
-        . nameText
+    lookup = fmap (fmap Text.pack) . Sys.lookupEnv . Text.unpack . nameText
 
 instance Context ((->) Environment)
   where
