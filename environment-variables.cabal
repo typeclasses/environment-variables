@@ -38,7 +38,7 @@ library
 
     other-modules:
         EnvData EnvFunctor MultiVar Name
-        OneOptionalVar OneRequiredVar
+        OneOptionalVar Var
         Problems Readable VarConversions
 
     default-extensions:

@@ -3,7 +3,7 @@ module VarConversions where
 import MultiVar (Multi (..))
 import qualified MultiVar
 import OneOptionalVar (Opt (Opt))
-import OneRequiredVar (Var (Var))
+import Var (Var (Var))
 
 import Data.Function ((.), id)
 import Data.Functor (fmap)

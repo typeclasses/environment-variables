@@ -1,4 +1,4 @@
-module OneRequiredVar where
+module Var where
 
 import Data.Functor (Functor)
 import Data.Maybe (Maybe)
