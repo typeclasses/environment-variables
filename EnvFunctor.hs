@@ -17,11 +17,11 @@ import qualified System.Environment as Sys
 
 class Applicative context => EnvFunctor context
   where
-    lookupEnv :: Name -> context (Maybe Text)
+    lookup :: Name -> context (Maybe Text)
 
 instance EnvFunctor IO
   where
-    lookupEnv =
+    lookup =
         fmap (fmap Text.pack)
         . Sys.lookupEnv
         . Text.unpack
@@ -29,4 +29,4 @@ instance EnvFunctor IO
 
 instance EnvFunctor ((->) Environment)
   where
-    lookupEnv = Environment.lookup
+    lookup = Environment.lookup

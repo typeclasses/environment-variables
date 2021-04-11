@@ -13,7 +13,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 
 import EnvData (Environment)
-import EnvFunctor (EnvFunctor, lookupEnv)
+import EnvFunctor (EnvFunctor, lookup)
 import MultiVar (Multi (..))
 import Name (Name)
 import OneOptionalVar (Opt (..))
@@ -44,7 +44,7 @@ justOrInvalid = justOr VarInvalid
 
 instance Readable Name Text
   where
-    readVar name = fmap (justOrMissing name) $ lookupEnv name
+    readVar name = fmap (justOrMissing name) $ lookup name
 
 instance Readable (Var a) a
   where
@@ -56,7 +56,7 @@ instance Readable (Opt a) a
   where
     readVar (Opt name def parse) =
         fmap (maybe (Success def) (justOrInvalid name . parse)) $
-            lookupEnv name
+            lookup name
 
 instance Readable (Multi v) v
   where
