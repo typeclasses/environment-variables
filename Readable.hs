@@ -62,7 +62,7 @@ instance Readable (Multi v) v
     readVar :: forall context value. Context context =>
         Multi value -> context (Validation EnvFailure value)
     readVar = \case
-      Pure x -> pure (Success x)
+      Zero x -> pure (Success x)
       OneVar v -> readVar v
       OneOpt v -> readVar v
       Ap mf v -> pure (<*>) <*> readVar mf <*> readVar v
