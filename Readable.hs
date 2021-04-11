@@ -13,7 +13,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 
 import EnvData (Environment)
-import EnvFunctor (EnvFunctor, lookup)
+import EnvFunctor (Context, lookup)
 import MultiVar (Multi (..))
 import Name (Name)
 import OneOptionalVar (Opt (..))
@@ -31,7 +31,7 @@ Type parameters:
 -}
 class Readable var value | var -> value
   where
-    readVar :: EnvFunctor context => var -> context (Validation EnvFailure value)
+    readVar :: Context context => var -> context (Validation EnvFailure value)
 
 justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
@@ -60,7 +60,8 @@ instance Readable (Opt a) a
 
 instance Readable (Multi v) v
   where
-    readVar :: forall f a. EnvFunctor f => Multi a -> f (Validation EnvFailure a)
+    readVar :: forall context value. Context context =>
+        Multi value -> context (Validation EnvFailure value)
     readVar = \case
       Pure x -> pure (Success x)
       ApVar mf v -> pure (<*>) <*> readVar mf <*> readVar v

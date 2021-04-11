@@ -8,7 +8,7 @@ module Env
     -- ** Multiple
     Multi, ToMulti (..),
     -- * Using vars
-    Readable (..), EnvFunctor (..),
+    Readable (..), Context (..),
     -- * Var names
     Name,
     -- * What can go wrong
@@ -18,7 +18,7 @@ module Env
   ) where
 
 import EnvData (Environment, pattern EnvironmentList, Item (..), getEnvironment)
-import EnvFunctor (EnvFunctor (..))
+import EnvFunctor (Context (..))
 import IO (readVar)
 import MultiVar (Multi)
 import Name (Name)

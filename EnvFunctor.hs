@@ -15,11 +15,11 @@ import Name (Name, nameText)
 
 import qualified System.Environment as Sys
 
-class Applicative context => EnvFunctor context
+class Applicative context => Context context
   where
     lookup :: Name -> context (Maybe Text)
 
-instance EnvFunctor IO
+instance Context IO
   where
     lookup =
         fmap (fmap Text.pack)
@@ -27,6 +27,6 @@ instance EnvFunctor IO
         . Text.unpack
         . nameText
 
-instance EnvFunctor ((->) Environment)
+instance Context ((->) Environment)
   where
     lookup = Environment.lookup
