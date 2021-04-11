@@ -24,15 +24,65 @@ import EnvFunctor (Context (..))
 import MultiVar (Product (..))
 import Name (Name, pattern NameText, pattern NameString)
 import Var (Var (..), Opt (..), var)
-import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..))
-import Readable (Readable (..))
+import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..), oneProblemFailure)
 import VarConversions (optional, optionalMaybe)
 
-import Data.Function ((.))
-import Data.Maybe (Maybe (..))
+import Control.Applicative (Applicative (..))
+import Data.Function ((.), ($))
+import Data.Functor (fmap)
+import Data.Functor.Compose (Compose (Compose), getCompose)
+import Data.Map (Map)
+import Data.Maybe (Maybe (..), maybe)
 import Data.Text (Text)
+import Data.Validation (Validation (Success, Failure), bindValidation)
+import System.IO (IO)
 
--- | A /lift/ is a trivial function that converts from a smaller type to a more complex one. Since 'lift' is polymorphic in both domain and codomain, explicit type annotations are recommended.
+import qualified Data.Text as Text
+
+---
+
+{- | Type parameters:
+
+* @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Product'.
+* @value@ - What type of value is produced when an environment variable is successfully read.
+* @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment. -}
+
+class Readable var value | var -> value
+  where
+    read :: Context context => var -> context (Validation EnvFailure value)
+
+justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
+justOr x name = maybe (Failure (oneProblemFailure x name)) Success
+
+instance Readable Name Text
+  where
+    read name = fmap (justOr VarMissing name) $ lookup name
+
+instance Readable (Var a) a
+  where
+    read (Var name parse) =
+        fmap (`bindValidation` (justOr VarInvalid name . parse)) $
+            read name
+
+instance Readable (Opt a) a
+  where
+    read (Opt name def parse) =
+        fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
+            lookup name
+
+instance Readable (Product v) v
+  where
+    read :: forall context value. Context context =>
+        Product value -> context (Validation EnvFailure value)
+    read = \case
+      Zero x -> pure (Success x)
+      OneVar v -> read v
+      OneOpt v -> read v
+      Many mf v -> pure (<*>) <*> read mf <*> read v
+
+---
+
+{- | A /lift/ is a trivial function that converts from a smaller type to a more complex one. Since 'lift' is polymorphic in both domain and codomain, explicit type annotations are recommended. -}
 
 class Lift b a where
     lift :: a -> b
