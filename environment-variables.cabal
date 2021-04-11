@@ -38,8 +38,7 @@ library
 
     other-modules:
         EnvData EnvFunctor MultiVar Name
-        OneOptionalVar Var
-        Problems Readable VarConversions
+        Var Problems Readable VarConversions
 
     default-extensions:
         DeriveAnyClass DeriveDataTypeable DeriveFunctor

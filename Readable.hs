@@ -16,8 +16,7 @@ import EnvData (Environment)
 import EnvFunctor (Context, lookup)
 import MultiVar (Multi (..))
 import Name (Name)
-import OneOptionalVar (Opt (..))
-import Var (Var (..))
+import Var (Var (..), Opt (..))
 import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 {- |

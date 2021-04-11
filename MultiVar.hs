@@ -4,8 +4,7 @@ import Control.Applicative (Applicative (..))
 import Data.Function ((.))
 import Data.Functor (Functor (..))
 
-import Var (Var)
-import OneOptionalVar (Opt)
+import Var (Var, Opt)
 
 data Multi a
   where
