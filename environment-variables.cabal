@@ -23,7 +23,7 @@ description:
     complete error output when there are errors related to more
     than one variable.
     .
-    We also provide a polymorphic 'readVar' function that can be
+    We also provide a polymorphic 'read' function that can be
     used to obtain variables, as defined by either of the types
     discussed above, from either the actual system environment or
     from a map data structure.

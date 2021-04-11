@@ -1,4 +1,4 @@
-module Readable (Readable (readVar)) where
+module Readable (Readable (read)) where
 
 import Control.Applicative (Applicative (..))
 import Data.Function ((.), ($))
@@ -30,7 +30,7 @@ Type parameters:
 -}
 class Readable var value | var -> value
   where
-    readVar :: Context context => var -> context (Validation EnvFailure value)
+    read :: Context context => var -> context (Validation EnvFailure value)
 
 justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
@@ -43,26 +43,26 @@ justOrInvalid = justOr VarInvalid
 
 instance Readable Name Text
   where
-    readVar name = fmap (justOrMissing name) $ lookup name
+    read name = fmap (justOrMissing name) $ lookup name
 
 instance Readable (Var a) a
   where
-    readVar (Var name parse) =
+    read (Var name parse) =
         fmap (`bindValidation` (justOrInvalid name . parse)) $
-            readVar name
+            read name
 
 instance Readable (Opt a) a
   where
-    readVar (Opt name def parse) =
+    read (Opt name def parse) =
         fmap (maybe (Success def) (justOrInvalid name . parse)) $
             lookup name
 
 instance Readable (Product v) v
   where
-    readVar :: forall context value. Context context =>
+    read :: forall context value. Context context =>
         Product value -> context (Validation EnvFailure value)
-    readVar = \case
+    read = \case
       Zero x -> pure (Success x)
-      OneVar v -> readVar v
-      OneOpt v -> readVar v
-      Many mf v -> pure (<*>) <*> readVar mf <*> readVar v
+      OneVar v -> read v
+      OneOpt v -> read v
+      Many mf v -> pure (<*>) <*> read mf <*> read v
