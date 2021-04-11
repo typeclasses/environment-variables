@@ -1,6 +1,6 @@
 module Problems where
 
-import Name (Name, nameText)
+import Name (Name, pattern NameText)
 
 import Control.Exception (Exception (displayException))
 import Data.Data (Data)
@@ -68,11 +68,11 @@ oneProblemFailure p x = EnvFailure (Map.singleton x p)
 
 -- | Error message to report that a single environment variable is missing.
 missingMessage :: Name -> TextBuilder.Builder
-missingMessage x = "Environment variable" ! quote (TextBuilder.fromText $ nameText x) ! "is missing."
+missingMessage (NameText x) = "Environment variable" ! quote (TextBuilder.fromText x) ! "is missing."
 
 -- | Error message to report that a single environment variable is present but invalid.
 invalidMessage :: Name -> TextBuilder.Builder
-invalidMessage x = "Environment variable" ! quote (TextBuilder.fromText $ nameText x) ! "has an invalid value."
+invalidMessage (NameText x) = "Environment variable" ! quote (TextBuilder.fromText x) ! "has an invalid value."
 
 -- | Concatenate two strings together with a space in between.
 (!) :: (Semigroup a, IsString a) => a -> a -> a

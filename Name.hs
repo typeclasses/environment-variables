@@ -13,7 +13,7 @@ import Text.Show (Show)
 import qualified Data.Text as Text
 
 -- | The name of an environment variable.
-newtype Name = NameText { nameText :: Text }
+newtype Name = NameText Text
     deriving stock (Eq, Ord, Show, Data, Generic)
     deriving anyclass (Hashable)
     deriving newtype (IsString, Semigroup, Monoid)

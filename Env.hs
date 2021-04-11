@@ -20,7 +20,7 @@ module Env
   ) where
 
 import EnvData (Environment, pattern EnvironmentMap, pattern EnvironmentList, Item (..), getEnvironment)
-import Name (Name, pattern NameText, nameText, pattern NameString)
+import Name (Name, pattern NameText, pattern NameString)
 import Var (Var (..), Opt (..), var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..), oneProblemFailure)
 
@@ -46,7 +46,7 @@ class Applicative context => Context context
 
 instance Context IO
   where
-    lookup = fmap (fmap Text.pack) . Sys.lookupEnv . Text.unpack . nameText
+    lookup (NameText x) = fmap (fmap Text.pack) $ Sys.lookupEnv $ Text.unpack x
 
 instance Context ((->) Environment)
   where
