@@ -28,24 +28,18 @@ data Item = Item Name Text
     deriving stock (Eq, Ord, Show, Data, Generic)
     deriving anyclass (Hashable)
 
-newtype EnvData = EnvData { envDataMap :: Map Name Text }
+newtype Environment = EnvironmentMap (Map Name Text)
     deriving stock (Eq, Ord, Show, Data)
     deriving newtype (Semigroup, Monoid)
 
-lookupEnvData :: Name -> EnvData -> Maybe Text
-lookupEnvData n (EnvData m) = Map.lookup n m
+lookup :: Name -> Environment -> Maybe Text
+lookup n (EnvironmentMap m) = Map.lookup n m
 
-pattern EnvList :: [Item] -> EnvData
-pattern EnvList xs <- (envDataToList -> xs)
+pattern EnvironmentList :: [Item] -> Environment
+pattern EnvironmentList xs <- (\(EnvironmentMap m) -> List.map (\(n, v) -> Item n v) (Map.toList m) -> xs)
   where
-    EnvList xs = listToEnvData xs
-
-envDataToList :: EnvData -> [Item]
-envDataToList = List.map (\(n, v) -> Item n v) . Map.toList . envDataMap
-
-listToEnvData :: [Item] -> EnvData
-listToEnvData = EnvData . Map.fromList . List.map (\(Item n v) -> (n, v))
+    EnvironmentList = EnvironmentMap . Map.fromList . List.map (\(Item n v) -> (n, v))
 
 -- | Reads the process's entire environment at once.
-getEnvData :: IO EnvData
-getEnvData = fmap (EnvList . List.map (\(n, v) -> Item (fromString n) (fromString v))) Env.getEnvironment
+getEnvironment :: IO Environment
+getEnvironment = fmap (EnvironmentList . List.map (\(n, v) -> Item (fromString n) (fromString v))) Env.getEnvironment

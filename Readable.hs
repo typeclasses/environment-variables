@@ -12,7 +12,7 @@ import Data.Map (Map)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import EnvData (EnvData)
+import EnvData (Environment)
 import EnvFunctor (EnvFunctor, lookupEnv)
 import MultiVar (Multi (..))
 import Name (Name)

@@ -9,7 +9,8 @@ import System.IO (IO)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import EnvData (EnvData, lookupEnvData)
+import EnvData (Environment)
+import qualified EnvData as Environment
 import Name (Name, nameText)
 
 import qualified System.Environment as Sys
@@ -26,6 +27,6 @@ instance EnvFunctor IO
         . Text.unpack
         . nameText
 
-instance EnvFunctor ((->) EnvData)
+instance EnvFunctor ((->) Environment)
   where
-    lookupEnv = lookupEnvData
+    lookupEnv = Environment.lookup
