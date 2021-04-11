@@ -3,6 +3,9 @@ module MultiVar where
 import Control.Applicative (Applicative (..))
 import Data.Function ((.))
 import Data.Functor (Functor (..))
+import Data.Maybe (Maybe (..))
+import Data.String (IsString (fromString))
+import Data.Text (Text)
 
 import Var (Var, Opt)
 
@@ -13,6 +16,14 @@ data Multi a
     OneVar :: Var a -> Multi a
     OneOpt :: Opt a -> Multi a
     Many :: Multi (a -> b) -> Multi a -> Multi b
+
+instance IsString (Multi Text)
+  where
+    fromString = OneVar . fromString
+
+instance IsString (Multi (Maybe Text))
+  where
+    fromString = OneOpt . fromString
 
 instance Functor Multi
   where

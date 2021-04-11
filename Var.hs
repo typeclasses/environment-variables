@@ -1,7 +1,9 @@
 module Var where
 
+import Data.Function ((.))
 import Data.Functor (Functor)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe (Just, Nothing))
+import Data.String (IsString (fromString))
 import Data.Text (Text)
 
 import Name (Name)
@@ -9,6 +11,10 @@ import Name (Name)
 -- | A single required environment variable.
 data Var value = Var Name (Text -> Maybe value)
     deriving stock Functor
+
+instance IsString (Var Text)
+  where
+    fromString x = Var (fromString x) Just
 
 var ::
     Name -- ^ The name of the environment variable to read.
@@ -23,3 +29,7 @@ data Opt value =
       value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
     deriving stock Functor
+
+instance IsString (Opt (Maybe Text))
+  where
+    fromString x = Opt (fromString x) Nothing (Just . Just)
