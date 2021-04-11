@@ -47,7 +47,7 @@ library
         GADTs InstanceSigs LambdaCase
         GeneralizedNewtypeDeriving NoImplicitPrelude
         OverloadedStrings PatternSynonyms RankNTypes
-        ScopedTypeVariables StandaloneDeriving ViewPatterns
+        ScopedTypeVariables StandaloneDeriving TypeApplications ViewPatterns
 
     build-depends:
         base, containers, hashable, text, validation

@@ -6,7 +6,9 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Opt,
     -- ** Multiple
-    Multi, ToMulti (..),
+    Multi,
+    -- ** Lifting
+    Lift (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -24,4 +26,4 @@ import Name (Name, pattern NameText, pattern NameString)
 import Var (Var, Opt, var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..))
 import Readable (Readable (..))
-import VarConversions (optional, optionalMaybe, ToMulti (..))
+import VarConversions (optional, optionalMaybe, Lift (..))

@@ -9,7 +9,7 @@ import Data.Text (Text)
 
 import Var (Var, Opt)
 
--- | The product of multiplying any number of individual environment variables.
+-- | The product of multiplying any number of individual environment variables. Construct 'Multi' values using 'lift', 'Applicative' combinators, and string overloading.
 data Multi a
   where
     Zero :: a -> Multi a
