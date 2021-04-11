@@ -87,10 +87,10 @@ instance Readable (Product v) v
     read :: forall context value. Context context =>
         Product value -> context (Validation EnvFailure value)
     read = \case
-      Zero x -> pure (Success x)
-      OneVar v -> read v
-      OneOpt v -> read v
-      Many mf v -> pure (<*>) <*> read mf <*> read v
+      UseNoVars x -> pure (Success x)
+      UseOneVar v -> read v
+      UseOneOpt v -> read v
+      UseManyVars mf v -> pure (<*>) <*> read mf <*> read v
 
 ---
 
@@ -100,10 +100,10 @@ class Lift b a where
     lift :: a -> b
 
 instance Lift (Product a) (Var a) where
-    lift = OneVar
+    lift = UseOneVar
 
 instance Lift (Product a) (Opt a) where
-    lift = OneOpt
+    lift = UseOneOpt
 
 instance Lift (Var Text) Name where
     lift x = Var x Just

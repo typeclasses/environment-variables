@@ -12,38 +12,38 @@ import Var (Var, Opt)
 -- | The product of multiplying any number of individual environment variables. Construct 'Product' values using 'lift', 'Applicative' combinators, and string overloading.
 data Product a
   where
-    Zero :: a -> Product a
-    OneVar :: Var a -> Product a
-    OneOpt :: Opt a -> Product a
-    Many :: Product (a -> b) -> Product a -> Product b
+    UseNoVars :: a -> Product a
+    UseOneVar :: Var a -> Product a
+    UseOneOpt :: Opt a -> Product a
+    UseManyVars :: Product (a -> b) -> Product a -> Product b
 
 instance IsString (Product Text)
   where
-    fromString = OneVar . fromString
+    fromString = UseOneVar . fromString
 
 instance IsString (Product (Maybe Text))
   where
-    fromString = OneOpt . fromString
+    fromString = UseOneOpt . fromString
 
 instance Functor Product
   where
     fmap f = \case
-      Zero x -> Zero (f x)
-      OneVar x -> OneVar (fmap f x)
-      OneOpt x -> OneOpt (fmap f x)
-      Many mf ma -> Many (fmap (f .) mf) ma
+      UseNoVars x -> UseNoVars (f x)
+      UseOneVar x -> UseOneVar (fmap f x)
+      UseOneOpt x -> UseOneOpt (fmap f x)
+      UseManyVars mf ma -> UseManyVars (fmap (f .) mf) ma
 
 instance Applicative Product
   where
-    pure = Zero
+    pure = UseNoVars
 
     (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
     mf <*> (multi_a :: Product a) =
       case mf of
-        Zero (f :: a -> b) -> fmap f multi_a
-        OneVar vf -> Many (OneVar vf) multi_a
-        OneOpt vf -> Many (OneOpt vf) multi_a
-        Many (multi_cab :: Product (c -> a -> b)) (v :: Product c) -> Many multi_cb v
+        UseNoVars (f :: a -> b) -> fmap f multi_a
+        UseOneVar vf -> UseManyVars (UseOneVar vf) multi_a
+        UseOneOpt vf -> UseManyVars (UseOneOpt vf) multi_a
+        UseManyVars (multi_cab :: Product (c -> a -> b)) (v :: Product c) -> UseManyVars multi_cb v
           where
             multi_cb :: Product (c -> b)
             multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
