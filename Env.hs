@@ -19,7 +19,6 @@ module Env
 
 import EnvData (Environment, pattern EnvironmentList, Item (..), getEnvironment)
 import EnvFunctor (Context (..))
-import IO (readVar)
 import MultiVar (Multi)
 import Name (Name)
 import OneOptionalVar (Opt)
