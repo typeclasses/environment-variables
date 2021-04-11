@@ -1,6 +1,6 @@
 module VarConversions where
 
-import MultiVar (Multi (..))
+import MultiVar (Product (..))
 import qualified MultiVar
 import Var (Var (Var), Opt (Opt))
 import Name
@@ -25,10 +25,10 @@ optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
 class Lift b a where
     lift :: a -> b
 
-instance Lift (Multi a) (Var a) where
+instance Lift (Product a) (Var a) where
     lift = OneVar
 
-instance Lift (Multi a) (Opt a) where
+instance Lift (Product a) (Opt a) where
     lift = OneOpt
 
 instance Lift (Var Text) Name where
@@ -37,8 +37,8 @@ instance Lift (Var Text) Name where
 instance Lift (Opt (Maybe Text)) Name where
     lift x = Opt x Nothing (Just . Just)
 
-instance Lift (Multi Text) Name where
+instance Lift (Product Text) Name where
     lift = lift . lift @(Var Text)
 
-instance Lift (Multi (Maybe Text)) Name where
+instance Lift (Product (Maybe Text)) Name where
     lift = lift . lift @(Opt (Maybe Text))

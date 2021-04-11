@@ -14,7 +14,7 @@ import qualified Data.Text as Text
 
 import EnvData (Environment)
 import EnvFunctor (Context, lookup)
-import MultiVar (Multi (..))
+import MultiVar (Product (..))
 import Name (Name)
 import Var (Var (..), Opt (..))
 import Problems (EnvFailure, Problem (..), oneProblemFailure)
@@ -23,7 +23,7 @@ import Problems (EnvFailure, Problem (..), oneProblemFailure)
 
 Type parameters:
 
-  - @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Multi'.
+  - @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Product'.
   - @value@ - What type of value is produced when an environment variable is successfully read.
   - @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment.
 
@@ -57,10 +57,10 @@ instance Readable (Opt a) a
         fmap (maybe (Success def) (justOrInvalid name . parse)) $
             lookup name
 
-instance Readable (Multi v) v
+instance Readable (Product v) v
   where
     readVar :: forall context value. Context context =>
-        Multi value -> context (Validation EnvFailure value)
+        Product value -> context (Validation EnvFailure value)
     readVar = \case
       Zero x -> pure (Success x)
       OneVar v -> readVar v

@@ -6,7 +6,7 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Opt,
     -- ** Multiple
-    Multi,
+    Product,
     -- ** Lifting
     Lift (..),
     -- * Using vars
@@ -21,7 +21,7 @@ module Env
 
 import EnvData (Environment, pattern EnvironmentList, Item (..), getEnvironment)
 import EnvFunctor (Context (..))
-import MultiVar (Multi)
+import MultiVar (Product)
 import Name (Name, pattern NameText, pattern NameString)
 import Var (Var, Opt, var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..))

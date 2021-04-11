@@ -9,23 +9,23 @@ import Data.Text (Text)
 
 import Var (Var, Opt)
 
--- | The product of multiplying any number of individual environment variables. Construct 'Multi' values using 'lift', 'Applicative' combinators, and string overloading.
-data Multi a
+-- | The product of multiplying any number of individual environment variables. Construct 'Product' values using 'lift', 'Applicative' combinators, and string overloading.
+data Product a
   where
-    Zero :: a -> Multi a
-    OneVar :: Var a -> Multi a
-    OneOpt :: Opt a -> Multi a
-    Many :: Multi (a -> b) -> Multi a -> Multi b
+    Zero :: a -> Product a
+    OneVar :: Var a -> Product a
+    OneOpt :: Opt a -> Product a
+    Many :: Product (a -> b) -> Product a -> Product b
 
-instance IsString (Multi Text)
+instance IsString (Product Text)
   where
     fromString = OneVar . fromString
 
-instance IsString (Multi (Maybe Text))
+instance IsString (Product (Maybe Text))
   where
     fromString = OneOpt . fromString
 
-instance Functor Multi
+instance Functor Product
   where
     fmap f = \case
       Zero x -> Zero (f x)
@@ -33,17 +33,17 @@ instance Functor Multi
       OneOpt x -> OneOpt (fmap f x)
       Many mf ma -> Many (fmap (f .) mf) ma
 
-instance Applicative Multi
+instance Applicative Product
   where
     pure = Zero
 
-    (<*>) :: forall a b. Multi (a -> b) -> Multi a -> Multi b
-    mf <*> (multi_a :: Multi a) =
+    (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
+    mf <*> (multi_a :: Product a) =
       case mf of
         Zero (f :: a -> b) -> fmap f multi_a
         OneVar vf -> Many (OneVar vf) multi_a
         OneOpt vf -> Many (OneOpt vf) multi_a
-        Many (multi_cab :: Multi (c -> a -> b)) (v :: Multi c) -> Many multi_cb v
+        Many (multi_cab :: Product (c -> a -> b)) (v :: Product c) -> Many multi_cb v
           where
-            multi_cb :: Multi (c -> b)
+            multi_cb :: Product (c -> b)
             multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
