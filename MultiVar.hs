@@ -6,6 +6,7 @@ import Data.Functor (Functor (..))
 
 import Var (Var, Opt)
 
+-- | The product of multiplying any number of individual environment variables.
 data Multi a
   where
     Zero :: a -> Multi a
