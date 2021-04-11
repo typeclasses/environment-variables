@@ -32,9 +32,6 @@ newtype Environment = EnvironmentMap (Map Name Text)
     deriving stock (Eq, Ord, Show, Data)
     deriving newtype (Semigroup, Monoid)
 
-lookup :: Name -> Environment -> Maybe Text
-lookup n (EnvironmentMap m) = Map.lookup n m
-
 pattern EnvironmentList :: [Item] -> Environment
 pattern EnvironmentList xs <- (\(EnvironmentMap m) -> List.map (\(n, v) -> Item n v) (Map.toList m) -> xs)
   where

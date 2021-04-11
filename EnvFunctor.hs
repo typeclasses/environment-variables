@@ -9,9 +9,11 @@ import System.IO (IO)
 import Data.Text (Text)
 import qualified Data.Text as Text
 
-import EnvData (Environment)
+import EnvData
 import qualified EnvData as Environment
 import Name (Name, nameText)
+
+import qualified Data.Map.Strict as Map
 
 import qualified System.Environment as Sys
 
@@ -25,4 +27,4 @@ instance Context IO
 
 instance Context ((->) Environment)
   where
-    lookup = Environment.lookup
+    lookup n (EnvironmentMap m) = Map.lookup n m
