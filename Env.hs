@@ -10,7 +10,7 @@ module Env
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
-    Name, pattern NameText,
+    Name, pattern NameText, pattern NameString,
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Environment
@@ -20,7 +20,7 @@ module Env
 import EnvData (Environment, pattern EnvironmentList, Item (..), getEnvironment)
 import EnvFunctor (Context (..))
 import MultiVar (Multi)
-import Name (Name (NameText))
+import Name (Name, pattern NameText, pattern NameString)
 import OneOptionalVar (Opt)
 import OneRequiredVar (Var, var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..))
