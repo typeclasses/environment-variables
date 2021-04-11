@@ -25,8 +25,8 @@ class ToMulti v
 
 instance ToMulti Var
   where
-    multi = ApVar (Pure id)
+    multi = OneVar
 
 instance ToMulti Opt
   where
-    multi = ApOpt (Pure id)
+    multi = OneOpt
