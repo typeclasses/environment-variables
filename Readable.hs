@@ -65,4 +65,4 @@ instance Readable (Multi v) v
       Zero x -> pure (Success x)
       OneVar v -> readVar v
       OneOpt v -> readVar v
-      Ap mf v -> pure (<*>) <*> readVar mf <*> readVar v
+      Many mf v -> pure (<*>) <*> readVar mf <*> readVar v
