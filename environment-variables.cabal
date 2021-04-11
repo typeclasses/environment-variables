@@ -37,7 +37,7 @@ library
     exposed-modules: Env
 
     other-modules:
-        EnvData EnvFunctor MultiVar Name
+        EnvData EnvFunctor Name
         Var Problems
 
     default-extensions:
