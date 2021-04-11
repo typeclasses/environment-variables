@@ -25,7 +25,6 @@ import MultiVar (Product (..))
 import Name (Name, pattern NameText, pattern NameString)
 import Var (Var (..), Opt (..), var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..), oneProblemFailure)
-import VarConversions (optional, optionalMaybe)
 
 import Control.Applicative (Applicative (..))
 import Data.Function ((.), ($))
@@ -38,6 +37,19 @@ import Data.Validation (Validation (Success, Failure), bindValidation)
 import System.IO (IO)
 
 import qualified Data.Text as Text
+
+---
+
+optional ::
+    value -- ^ Value to return when the variable is absent in the environment.
+    -> Var value -- ^ A required environment variable.
+    -> Opt value -- ^ An optional environment variable.
+optional d (Var x f) = Opt x d f
+
+optionalMaybe ::
+    Var value -- ^ A required environment variable.
+    -> Opt (Maybe value) -- ^ An optional environment variable. Returns a 'Just' value when the variable is present in the environment. Returns a 'Nothing' value when the variable is absent in the environment.
+optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
 
 ---
 

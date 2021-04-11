@@ -38,7 +38,7 @@ library
 
     other-modules:
         EnvData EnvFunctor MultiVar Name
-        Var Problems VarConversions
+        Var Problems
 
     default-extensions:
         DeriveAnyClass DeriveDataTypeable DeriveFunctor
