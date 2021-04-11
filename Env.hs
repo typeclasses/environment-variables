@@ -99,7 +99,7 @@ optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
 
 * @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Product'.
 * @value@ - What type of value is produced when an environment variable is successfully read.
-* @context@ - Normally 'IO', but possibly @('EnvData' ->)@ if you are reading from a mock environment. -}
+* @context@ - Normally 'IO', but possibly @('Environment' ->)@ if you are reading from a mock environment. -}
 
 class Readable var value | var -> value
   where
