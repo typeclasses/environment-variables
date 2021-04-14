@@ -19,8 +19,6 @@ module Env
     Environment, pattern EnvironmentList, Item (..), getEnvironment
   ) where
 
-import Name (Name, pattern NameText, pattern NameString)
-
 import Control.Applicative (Applicative (..))
 import Control.Exception (Exception (displayException))
 import Data.Data (Data)
@@ -34,7 +32,7 @@ import Data.Maybe (Maybe (..), maybe)
 import Data.Monoid (Monoid)
 import Data.Ord (Ord)
 import Data.Semigroup (Semigroup, (<>))
-import Data.String (IsString (fromString))
+import Data.String (IsString (fromString), String)
 import Data.Text (Text)
 import Data.Validation (Validation (Success, Failure), bindValidation)
 import GHC.Generics (Generic)
@@ -48,6 +46,19 @@ import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
 import qualified Data.Map.Strict as Map
 import qualified System.Environment as Sys
+
+---
+
+-- | The name of an environment variable.
+newtype Name = NameText Text
+    deriving stock (Eq, Ord, Show, Data, Generic)
+    deriving anyclass (Hashable)
+    deriving newtype (IsString, Semigroup, Monoid)
+
+pattern NameString :: String -> Name
+pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
+  where
+    NameString s = NameText (Text.pack s)
 
 ---
 
