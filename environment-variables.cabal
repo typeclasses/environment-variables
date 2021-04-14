@@ -23,7 +23,7 @@ description:
     complete error output when there are errors related to more
     than one variable.
     .
-    We also provide a polymorphic 'read' function that can be
+    We provide a polymorphic 'read' function that can be
     used to obtain variables, as defined by either of the types
     discussed above, from either the actual system environment or
     from a map data structure.
@@ -35,15 +35,4 @@ library
     ghc-options: -Wall -fno-warn-unused-imports
     hs-source-dirs: .
     exposed-modules: Env
-
-    default-extensions:
-        DeriveAnyClass DeriveDataTypeable DeriveFunctor
-        DeriveGeneric DerivingStrategies DerivingVia
-        FlexibleInstances FunctionalDependencies
-        GADTs InstanceSigs LambdaCase
-        GeneralizedNewtypeDeriving NoImplicitPrelude
-        OverloadedStrings PatternSynonyms RankNTypes
-        ScopedTypeVariables StandaloneDeriving TypeApplications ViewPatterns
-
-    build-depends:
-        base, containers, hashable, text, validation
+    build-depends: base, containers, hashable, text, validation

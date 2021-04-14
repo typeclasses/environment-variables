@@ -1,3 +1,15 @@
+{-# language
+    DeriveAnyClass, DeriveDataTypeable, DeriveFunctor,
+    DeriveGeneric, DerivingStrategies, DerivingVia,
+    FlexibleContexts,
+    FlexibleInstances, FunctionalDependencies,
+    GADTs, InstanceSigs, LambdaCase,
+    GeneralizedNewtypeDeriving, NoImplicitPrelude,
+    OverloadedStrings, PatternSynonyms, RankNTypes,
+    ScopedTypeVariables, StandaloneDeriving,
+    TypeApplications, ViewPatterns
+#-}
+
 module Env
   (
     -- * Defining vars
@@ -6,17 +18,17 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Opt,
     -- ** Multiple
-    Product,
+    Product, times,
     -- ** Lifting
     Lift (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
-    Name, pattern NameText, pattern NameString,
+    Name, name, pattern NameText, pattern NameString,
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Environment
-    Environment, pattern EnvironmentList, Item (..), getEnvironment
+    Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment
   ) where
 
 import Control.Applicative (Applicative (..))
@@ -54,6 +66,9 @@ newtype Name = NameText Text
     deriving stock (Eq, Ord, Show, Data, Generic)
     deriving anyclass (Hashable)
     deriving newtype (IsString, Semigroup, Monoid)
+
+name :: Text -> Name
+name = NameText
 
 pattern NameString :: String -> Name
 pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
@@ -98,10 +113,16 @@ data Item = Item Name Text
     deriving stock (Eq, Ord, Show, Data, Generic)
     deriving anyclass (Hashable)
 
+item :: Name -> Text -> Item
+item = Item
+
 pattern EnvironmentList :: [Item] -> Environment
 pattern EnvironmentList xs <- (\(EnvironmentMap m) -> List.map (\(n, v) -> Item n v) (Map.toList m) -> xs)
   where
     EnvironmentList = EnvironmentMap . Map.fromList . List.map (\(Item n v) -> (n, v))
+
+envs :: [Item] -> Environment
+envs = EnvironmentList
 
 {- | Reads the process's entire environment at once. -}
 
@@ -163,6 +184,9 @@ instance Applicative Product
           where
             multi_cb :: Product (c -> b)
             multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
+
+times :: Lift (Product a) x => Product (a -> b) -> x -> Product b
+p `times` x = p <*> lift x
 
 ---
 
