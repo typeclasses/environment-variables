@@ -20,7 +20,6 @@ module Env
   ) where
 
 import Name (Name, pattern NameText, pattern NameString)
-import Var (Var (..), Opt (..), var)
 import Problems (EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..), oneProblemFailure)
 
 import Control.Applicative (Applicative (..))
@@ -45,6 +44,34 @@ import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 import qualified System.Environment as Sys
+
+---
+
+-- | A single required environment variable.
+data Var value = Var Name (Text -> Maybe value)
+    deriving stock Functor
+
+instance IsString (Var Text)
+  where
+    fromString x = Var (fromString x) Just
+
+var ::
+    Name -- ^ The name of the environment variable to read.
+    -> (Text -> Maybe value) -- ^ How to parse the text into a value.
+    -> Var value
+var = Var
+
+-- | A single optional environment variable.
+data Opt value =
+    Opt
+      Name -- ^ The name of the environment variable to read.
+      value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
+      (Text -> Maybe value) -- ^ How to parse the text into a value.
+    deriving stock Functor
+
+instance IsString (Opt (Maybe Text))
+  where
+    fromString x = Opt (fromString x) Nothing (Just . Just)
 
 ---
 

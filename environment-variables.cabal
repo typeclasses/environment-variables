@@ -38,7 +38,7 @@ library
 
     other-modules:
         Name
-        Var Problems
+        Problems
 
     default-extensions:
         DeriveAnyClass DeriveDataTypeable DeriveFunctor
