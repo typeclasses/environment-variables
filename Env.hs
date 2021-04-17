@@ -191,14 +191,20 @@ p `times` x = p <*> lift x
 ---
 
 optional ::
-    value -- ^ Value to return when the variable is absent in the environment.
+    value -- ^ Default value to return when the variable is absent from the environment.
     -> Var value -- ^ A required environment variable.
     -> Opt value -- ^ An optional environment variable.
+    --
+    -- * Returns the default value when the variable is absent from the environment.
+    -- * Succeeds or fails according to the 'Var' parser when the variable is present in the environment.
 optional d (Var x f) = Opt x d f
 
 optionalMaybe ::
     Var value -- ^ A required environment variable.
-    -> Opt (Maybe value) -- ^ An optional environment variable. Returns a 'Just' value when the variable is present in the environment. Returns a 'Nothing' value when the variable is absent in the environment.
+    -> Opt (Maybe value) -- ^ An optional environment variable.
+    --
+    -- * Returns a 'Nothing' value when the variable is absent from the environment.
+    -- * Returns a 'Just' value when the variable is present in the environment.
 optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
 
 ---
