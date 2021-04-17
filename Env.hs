@@ -1,3 +1,9 @@
+{-# options_ghc
+    -Wall
+    -fno-warn-unused-imports
+    -fno-warn-name-shadowing
+#-}
+
 {-# language
     DeriveAnyClass, DeriveDataTypeable, DeriveFunctor,
     DeriveGeneric, DerivingStrategies, DerivingVia,
@@ -19,6 +25,7 @@ module Env
     optional, optionalMaybe, Opt,
     -- ** Multiple
     Product, times,
+    Sum, plus, zero,
     -- ** Lifting
     Lift (..),
     -- * Using vars
@@ -31,7 +38,7 @@ module Env
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment
   ) where
 
-import Control.Applicative (Applicative (..))
+import Control.Applicative (Alternative (..), Applicative (..))
 import Control.Exception (Exception (displayException))
 import Data.Data (Data)
 import Data.Eq (Eq)
@@ -39,9 +46,10 @@ import Data.Foldable (fold)
 import Data.Function ((.), ($))
 import Data.Functor (Functor (..), fmap)
 import Data.Hashable (Hashable)
+import Data.List ((++))
 import Data.Map (Map)
 import Data.Maybe (Maybe (..), maybe)
-import Data.Monoid (Monoid)
+import Data.Monoid (Monoid (mempty))
 import Data.Ord (Ord)
 import Data.Semigroup (Semigroup, (<>))
 import Data.String (IsString (fromString), String)
@@ -190,6 +198,41 @@ p `times` x = p <*> lift x
 
 ---
 
+data Sum a
+  where
+    ConsiderNoVars :: Sum a
+    ConsiderOneVar :: Var a -> Sum a
+    ConsiderManyVars :: Sum a -> Sum a -> Sum a
+
+instance IsString (Sum Text)
+  where
+    fromString = ConsiderOneVar . fromString
+
+instance Functor Sum
+  where
+    fmap f = \case
+      ConsiderNoVars -> ConsiderNoVars
+      ConsiderOneVar x -> ConsiderOneVar (fmap f x)
+      ConsiderManyVars x1 x2 -> ConsiderManyVars (fmap f x1) (fmap f x2)
+
+instance Semigroup (Sum a)
+  where
+    ConsiderNoVars <> x = x
+    x <> ConsiderNoVars = x
+    x <> y = ConsiderManyVars x y
+
+instance Monoid (Sum a)
+  where
+    mempty = ConsiderNoVars
+
+plus :: Lift (Sum a) x => Sum a -> x -> Sum a
+s `plus` x = s <> lift x
+
+zero :: Sum a
+zero = ConsiderNoVars
+
+---
+
 optional ::
     value -- ^ Default value to return when the variable is absent from the environment.
     -> Var value -- ^ A required environment variable.
@@ -205,7 +248,13 @@ optionalMaybe ::
     --
     -- * Returns a 'Nothing' value when the variable is absent from the environment.
     -- * Returns a 'Just' value when the variable is present in the environment.
-optionalMaybe (Var x f) = Opt x Nothing (fmap Just . f)
+optionalMaybe = optionalAlternative
+
+optionalList :: Var a -> Opt [a]
+optionalList = optionalAlternative
+
+optionalAlternative :: Alternative f => Var a -> Opt (f a)
+optionalAlternative (Var x f) = Opt x empty (fmap pure . f)
 
 ---
 
@@ -240,13 +289,18 @@ instance Readable (Opt a) a
 
 instance Readable (Product v) v
   where
-    read :: forall context value. Context context =>
-        Product value -> context (Validation EnvFailure value)
     read = \case
       UseNoVars x -> pure (Success x)
       UseOneVar v -> read v
       UseOneOpt v -> read v
       UseManyVars mf v -> pure (<*>) <*> read mf <*> read v
+
+instance Readable (Sum v) [v]
+  where
+    read = \case
+      ConsiderNoVars -> pure (Success [])
+      ConsiderOneVar v -> read (optionalList v)
+      ConsiderManyVars x y -> pure (liftA2 (++)) <*> read x <*> read y
 
 ---
 
@@ -257,6 +311,9 @@ class Lift b a where
 
 instance Lift (Product a) (Var a) where
     lift = UseOneVar
+
+instance Lift (Sum a) (Var a) where
+    lift = ConsiderOneVar
 
 instance Lift (Product a) (Opt a) where
     lift = UseOneOpt
@@ -272,6 +329,9 @@ instance Lift (Product Text) Name where
 
 instance Lift (Product (Maybe Text)) Name where
     lift = lift . lift @(Opt (Maybe Text))
+
+instance Lift (Sum Text) Name where
+    lift = lift . lift @(Var Text)
 
 ---
 

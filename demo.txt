@@ -19,3 +19,13 @@ Environment variable ‘z’ has an invalid value.
 Environment variable ‘x’ has an invalid value. Environment variable ‘z’ has an invalid value.
 
 Environment variable ‘y’ is missing. Environment variable ‘z’ has an invalid value.
+
+a
+
+a, 4
+
+Environment variable ‘z’ has an invalid value.
+
+Environment variable ‘z’ has an invalid value.
+
+-
