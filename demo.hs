@@ -2,8 +2,8 @@
 
 {-# language FlexibleContexts, NoImplicitPrelude, OverloadedStrings #-}
 
-import qualified Env (Lift, times, plus)
-import Env (Environment, EnvFailure, Product, Sum, var, name, item, envs, read, zero)
+import qualified Env (Lift, times)
+import Env (Environment, EnvFailure, Product, Sum, var, name, item, envs, read, zero, (||))
 
 import Control.Applicative (Applicative (..))
 import Control.Exception (Exception (displayException))
@@ -34,9 +34,6 @@ demoOutput = TextBuilder.toLazyText $ fold $ List.intersperse "\n" $ List.map (<
 (*) :: Env.Lift (Product a) x => Product (a -> b) -> x -> Product b
 (*) = Env.times
 
-(+) :: Env.Lift (Sum a) x => Sum a -> x -> Sum a
-(+) = Env.plus
-
 demoParts :: [TextBuilder.Builder]
 demoParts =
   List.map showValidation
@@ -54,11 +51,11 @@ demoParts =
     ]
   <>
   List.map showValidation'
-    [ read (zero + name "x" + name "y") env1
-    , read (zero + name "x" + name "z") env1
-    , read (zero + name "x" + var "z" trivialFailure) env1
-    , read (zero + name "y" + var "z" trivialFailure) env1
-    , read (zero + name "y") env1
+    [ read (name "x" || name "y") env1
+    , read (name "x" || name "z") env1
+    , read (name "x" || var "z" trivialFailure) env1
+    , read (name "y" || var "z" trivialFailure) env1
+    , read (name "a" || name "b") env1
     ]
 
 trivialSuccess, trivialFailure :: Text -> Maybe Text

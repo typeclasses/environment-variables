@@ -25,7 +25,7 @@ module Env
     optional, optionalMaybe, Opt,
     -- ** Multiple
     Product, times,
-    Sum, plus, zero,
+    Sum, (||), zero,
     -- ** Lifting
     Lift (..),
     -- * Using vars
@@ -225,8 +225,8 @@ instance Monoid (Sum a)
   where
     mempty = ConsiderNoVars
 
-plus :: Lift (Sum a) x => Sum a -> x -> Sum a
-s `plus` x = s <> lift x
+(||) :: (Lift (Sum a) x, Lift (Sum a) y) => x -> y -> Sum a
+x || y = lift x <> lift y
 
 zero :: Sum a
 zero = ConsiderNoVars
