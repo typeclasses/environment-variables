@@ -1,18 +1,18 @@
-a
+"j91bD2ncr"
 
-Environment variable ‘y’ is missing.
+Environment variable ‘API_KEY’ is missing.
 
-a
+2
 
-Environment variable ‘x’ has an invalid value.
+Environment variable ‘VERBOSITY’ has an invalid value.
 
-a4
+"a4"
 
 Environment variable ‘y’ is missing.
 
 Environment variable ‘a’ is missing. Environment variable ‘b’ is missing.
 
-a4
+"a4"
 
 Environment variable ‘z’ has an invalid value.
 
@@ -20,12 +20,12 @@ Environment variable ‘x’ has an invalid value. Environment variable ‘z’ 
 
 Environment variable ‘y’ is missing. Environment variable ‘z’ has an invalid value.
 
-a
+["a"]
 
-a, 4
-
-Environment variable ‘z’ has an invalid value.
+["a","4"]
 
 Environment variable ‘z’ has an invalid value.
 
--
+Environment variable ‘z’ has an invalid value.
+
+[]

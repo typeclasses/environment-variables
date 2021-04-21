@@ -28,6 +28,8 @@ module Env
     Sum, (||), zero,
     -- ** Lifting
     Lift (..),
+    -- ** Some particulars
+    integerDecimal,
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -41,6 +43,7 @@ module Env
 import Control.Applicative (Alternative (..), Applicative (..))
 import Control.Exception (Exception (displayException))
 import Data.Data (Data)
+import Data.Either (Either (..))
 import Data.Eq (Eq)
 import Data.Foldable (fold)
 import Data.Function ((.), ($))
@@ -56,13 +59,14 @@ import Data.String (IsString (fromString), String)
 import Data.Text (Text)
 import Data.Validation (Validation (Success, Failure), bindValidation)
 import GHC.Generics (Generic)
-import Prelude (Enum, Bounded)
+import Prelude (Enum, Bounded, Integer)
 import System.IO (IO)
 import Text.Show (Show)
 
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
+import qualified Data.Text.Lazy.Read as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
 import qualified Data.Map.Strict as Map
 import qualified System.Environment as Sys
@@ -390,3 +394,16 @@ a ! b = a <> " " <> b
 -- | Surround a string with slanted quotation marks.
 quote :: (Semigroup a, IsString a) => a -> a
 quote x = "‘" <> x <> "’"
+
+---
+
+integerDecimal :: Name -> Var Integer
+integerDecimal n = var n $ textRead $ LazyText.signed LazyText.decimal
+
+textRead :: LazyText.Reader a -> Text -> Maybe a
+textRead r = f . r . LazyText.fromStrict
+  where
+    f =
+      \case
+        Right (a, t) | LazyText.null t -> Just a
+        _ -> Nothing
