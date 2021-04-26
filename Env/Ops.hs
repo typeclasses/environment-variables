@@ -1,3 +1,5 @@
+{-# options_ghc -Wall #-}
+
 {-# language FlexibleContexts, NoImplicitPrelude #-}
 
 module Env.Ops where
