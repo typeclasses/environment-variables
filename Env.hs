@@ -24,8 +24,8 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Opt,
     -- ** Multiple
-    Product, times,
-    Sum, (||), zero,
+    Product,
+    Sum, zero,
     -- ** Lifting
     Lift (..),
     -- ** Some particulars
@@ -214,9 +214,6 @@ instance Applicative Product
             multi_cb :: Product (c -> b)
             multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
 
-times :: Lift (Product a) x => Product (a -> b) -> x -> Product b
-p `times` x = p <*> lift x
-
 productNames :: Product a -> Set Name
 productNames =
   \case
@@ -253,9 +250,6 @@ instance Semigroup (Sum a)
 instance Monoid (Sum a)
   where
     mempty = ConsiderNoVars
-
-(||) :: (Lift (Sum a) x, Lift (Sum a) y) => x -> y -> Sum a
-x || y = lift x <> lift y
 
 zero :: Sum a
 zero = ConsiderNoVars

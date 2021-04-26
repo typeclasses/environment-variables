@@ -33,5 +33,5 @@ description:
 library
     default-language: Haskell2010
     hs-source-dirs: .
-    exposed-modules: Env
+    exposed-modules: Env, Env.Ops
     build-depends: base, containers, hashable, text, validation

@@ -2,8 +2,9 @@
 
 {-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, PatternSynonyms #-}
 
-import qualified Env (Lift, Var, times, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, Item (Item), productNames, sumNames)
-import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read, zero, (||))
+import qualified Env (Lift, Var, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, Item (Item), productNames, sumNames)
+import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read, zero)
+import Env.Ops ((*), (+))
 
 import Control.Applicative (Applicative (..))
 import Control.Exception (Exception (displayException))
@@ -87,9 +88,6 @@ oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar }
     "read " <> showDemoVar demoVar <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
     validation showEx (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
 
-(*) :: Env.Lift (Product a) x => Product (a -> b) -> x -> Product b
-(*) = Env.times
-
 class (Env.Readable v a, Show a) => DemoVar v a | v -> a
   where
     showDemoVar :: v -> TextBuilder.Builder
@@ -104,11 +102,11 @@ instance Show a => DemoVar (Env.Var a) a
 
 instance Show a => DemoVar (Env.Product a) a
   where
-    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " & " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.productNames
+    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.productNames
 
 instance Show a => DemoVar (Env.Sum a) [a]
   where
-    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " | " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.sumNames
+    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.sumNames
 
 data Demo = forall v a. (DemoVar v a) => Demo{ demoEnv :: DemoEnv, demoVar :: v }
 
@@ -126,11 +124,11 @@ demos =
     , Demo env1 $ (pure (<>) * name "x" * var "z" trivialFailure :: Env.Product Text)
     , Demo env1 $ (pure (<>) * var "x" trivialFailure * var "z" trivialFailure :: Env.Product Text)
     , Demo env1 $ (pure (<>) * var "y" trivialFailure * var "z" trivialFailure :: Env.Product Text)
-    , Demo env1 $ (name "x" || name "y" :: Env.Sum Text)
-    , Demo env1 $ (name "x" || name "z" :: Env.Sum Text)
-    , Demo env1 $ (name "x" || var "z" trivialFailure :: Env.Sum Text)
-    , Demo env1 $ (name "y" || var "z" trivialFailure :: Env.Sum Text)
-    , Demo env1 $ (name "a" || name "b" :: Env.Sum Text)
+    , Demo env1 $ (name "x" + name "y" :: Env.Sum Text)
+    , Demo env1 $ (name "x" + name "z" :: Env.Sum Text)
+    , Demo env1 $ (name "x" + var "z" trivialFailure :: Env.Sum Text)
+    , Demo env1 $ (name "y" + var "z" trivialFailure :: Env.Sum Text)
+    , Demo env1 $ (name "a" + name "b" :: Env.Sum Text)
     ]
 
 verbosity :: Env.Var Integer
