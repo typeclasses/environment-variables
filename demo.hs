@@ -29,9 +29,6 @@ main = LazyText.putStr demoOutput
 
 data DemoEnv = DemoEnv{ demoEnvName :: Text, demoEnvDescription :: Text, demoEnvironment :: Environment }
 
-env1 :: DemoEnv
-env1 = DemoEnv "env1" "Some nonsense" $ envs [item "x" "a", item "z" "4"]
-
 base :: DemoEnv
 base = DemoEnv{ demoEnvName, demoEnvDescription, demoEnvironment }
   where
@@ -74,7 +71,7 @@ demoOutput :: LazyText.Text
 demoOutput = TextBuilder.toLazyText $ fold $ List.map (<> "\n") lines
   where
     lines =
-        (List.intercalate [""] $ List.map oneEnvOutput [base, app, env1])
+        (List.intercalate [""] $ List.map oneEnvOutput [base, app])
         <> [""]
         <> List.map oneDemoOutput demos
 
@@ -87,6 +84,9 @@ oneDemoOutput :: Demo -> TextBuilder.Builder
 oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar } =
     "read " <> showDemoVar demoVar <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
     validation showEx (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
+
+showEx :: Exception e => e -> TextBuilder.Builder
+showEx = TextBuilder.fromString . displayException
 
 class (Env.Readable v a, Show a) => DemoVar v a | v -> a
   where
@@ -113,30 +113,27 @@ data Demo = forall v a. (DemoVar v a) => Demo{ demoEnv :: DemoEnv, demoVar :: v 
 demos :: [Demo]
 demos =
   -- List.map (validation showEx TextBuilder.fromString)
-    [ Demo app $ name "API_KEY"
-    , Demo base $ name "API_KEY"
+    [ Demo app apiKey
+    , Demo base apiKey
     , Demo app verbosity
     , Demo problem verbosity
-    , Demo env1 $ (pure (<>) * name "x" * name "z" :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * name "x" * name "y" :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * name "a" * name "b" :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * name "x" * var "z" trivialSuccess :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * name "x" * var "z" trivialFailure :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * var "x" trivialFailure * var "z" trivialFailure :: Env.Product Text)
-    , Demo env1 $ (pure (<>) * var "y" trivialFailure * var "z" trivialFailure :: Env.Product Text)
-    , Demo env1 $ (name "x" + name "y" :: Env.Sum Text)
-    , Demo env1 $ (name "x" + name "z" :: Env.Sum Text)
-    , Demo env1 $ (name "x" + var "z" trivialFailure :: Env.Sum Text)
-    , Demo env1 $ (name "y" + var "z" trivialFailure :: Env.Sum Text)
-    , Demo env1 $ (name "a" + name "b" :: Env.Sum Text)
+    , Demo app $ (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
+    , Demo base $ (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
+    , Demo app $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
+    , Demo base $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
+    , Demo problem $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
+    , Demo app $ (apiKey + apiSecret :: Env.Sum Text)
+    , Demo problem $ (apiKey + apiSecret :: Env.Sum Text)
     ]
 
 verbosity :: Env.Var Integer
 verbosity = Env.integerDecimal "VERBOSITY"
 
-trivialSuccess, trivialFailure :: Text -> Maybe Text
-trivialSuccess = Just
-trivialFailure = const Nothing
+apiKey :: Env.Name
+apiKey = name "API_KEY"
 
-showEx :: Exception e => e -> TextBuilder.Builder
-showEx = TextBuilder.fromString . displayException
+apiSecret :: Env.Name
+apiSecret = name "API_SECRET"
+
+home :: Env.Name
+home = name "HOME"
