@@ -25,7 +25,7 @@ module Env
     optional, optionalMaybe, Opt,
     -- ** Multiple
     Product,
-    Sum, zero,
+    Sum,
     -- ** Lifting
     Lift (..),
     -- ** Some particulars
@@ -250,9 +250,6 @@ instance Semigroup (Sum a)
 instance Monoid (Sum a)
   where
     mempty = ConsiderNoVars
-
-zero :: Sum a
-zero = ConsiderNoVars
 
 sumNames :: Sum a -> Set Name
 sumNames =

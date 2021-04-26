@@ -3,7 +3,7 @@
 {-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, PatternSynonyms #-}
 
 import qualified Env (Lift, Var, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, Item (Item), productNames, sumNames)
-import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read, zero)
+import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read)
 import Env.Ops ((*), (+))
 
 import Control.Applicative (Applicative (..))
