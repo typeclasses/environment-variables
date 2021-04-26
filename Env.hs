@@ -37,7 +37,9 @@ module Env
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Environment
-    Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment
+    Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
+    -- * Miscellanious accessors
+    varName, pattern VarNamed, pattern OptNamed, productNames, sumNames
   ) where
 
 import Control.Applicative (Alternative (..), Applicative (..))
@@ -55,6 +57,7 @@ import Data.Maybe (Maybe (..), maybe)
 import Data.Monoid (Monoid (mempty))
 import Data.Ord (Ord)
 import Data.Semigroup (Semigroup, (<>))
+import Data.Set (Set)
 import Data.String (IsString (fromString), String)
 import Data.Text (Text)
 import Data.Validation (Validation (Success, Failure), bindValidation)
@@ -69,6 +72,7 @@ import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Read as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
 import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified System.Environment as Sys
 
 ---
@@ -86,6 +90,7 @@ pattern NameString :: String -> Name
 pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
   where
     NameString s = NameText (Text.pack s)
+{-# COMPLETE NameString #-}
 
 ---
 
@@ -103,6 +108,13 @@ var ::
     -> Var value
 var = Var
 
+varName :: Var a -> Name
+varName (Var x _) = x
+
+pattern VarNamed :: Name -> Var value
+pattern VarNamed x <- Var x _
+{-# COMPLETE VarNamed #-}
+
 -- | A single optional environment variable.
 data Opt value =
     Opt
@@ -114,6 +126,10 @@ data Opt value =
 instance IsString (Opt (Maybe Text))
   where
     fromString x = Opt (fromString x) Nothing (Just . Just)
+
+pattern OptNamed :: Name -> Opt value
+pattern OptNamed x <- Opt x _ _
+{-# COMPLETE OptNamed #-}
 
 ---
 
@@ -132,6 +148,7 @@ pattern EnvironmentList :: [Item] -> Environment
 pattern EnvironmentList xs <- (\(EnvironmentMap m) -> List.map (\(n, v) -> Item n v) (Map.toList m) -> xs)
   where
     EnvironmentList = EnvironmentMap . Map.fromList . List.map (\(Item n v) -> (n, v))
+{-# COMPLETE EnvironmentList #-}
 
 envs :: [Item] -> Environment
 envs = EnvironmentList
@@ -200,6 +217,14 @@ instance Applicative Product
 times :: Lift (Product a) x => Product (a -> b) -> x -> Product b
 p `times` x = p <*> lift x
 
+productNames :: Product a -> Set Name
+productNames =
+  \case
+    UseNoVars _ -> mempty
+    UseOneVar (VarNamed x) -> Set.singleton x
+    UseOneOpt (OptNamed x) -> Set.singleton x
+    UseManyVars a b -> productNames a <> productNames b
+
 ---
 
 data Sum a
@@ -234,6 +259,13 @@ x || y = lift x <> lift y
 
 zero :: Sum a
 zero = ConsiderNoVars
+
+sumNames :: Sum a -> Set Name
+sumNames =
+  \case
+    ConsiderNoVars -> mempty
+    ConsiderOneVar (VarNamed x) -> Set.singleton x
+    ConsiderManyVars a b -> sumNames a <> sumNames b
 
 ---
 
@@ -363,6 +395,7 @@ pattern EnvFailureList :: [OneEnvFailure] -> EnvFailure
 pattern EnvFailureList xs <- (envFailureToList -> xs)
   where
     EnvFailureList = listToEnvFailure
+{-# COMPLETE EnvFailureList #-}
 
 envFailureToList :: EnvFailure -> [OneEnvFailure]
 envFailureToList = List.map (\(n, p) -> OneEnvFailure n p) . Map.toList . envFailureMap
