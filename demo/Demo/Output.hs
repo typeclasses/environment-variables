@@ -2,6 +2,8 @@
 
 {-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, PatternSynonyms #-}
 
+module Demo.Output where
+
 import qualified Env (Lift, Var, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, Item (Item), productNames, sumNames)
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read)
 import Env.Ops ((*), (+))
@@ -21,14 +23,13 @@ import Data.Validation (Validation, validation)
 import Prelude (Integer, show, Show)
 import System.IO (IO)
 
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as LazyText
+import qualified Data.Text.Lazy.Encoding as LazyText
 import qualified Data.Text.Lazy.IO as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
-
-main :: IO ()
-main = LazyText.putStr demoOutput
 
 demoOutput :: LazyText.Text
 demoOutput = TextBuilder.toLazyText $ fold $ List.map (<> "\n") lines

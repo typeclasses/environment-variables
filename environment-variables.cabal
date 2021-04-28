@@ -32,13 +32,23 @@ description:
 
 library
     default-language: Haskell2010
-    hs-source-dirs: .
+    hs-source-dirs: library
     exposed-modules: Env, Env.Ops
     build-depends: base, containers, hashable, text, validation
 
-executable demo
+-- Generates the demo output file `demo/demo.txt`.
+executable run-demo
     default-language: Haskell2010
-    hs-source-dirs: .
-    main-is: Demo/Main.hs
-    other-modules: Demo.Environments, Demo.Vars
-    build-depends: base, containers, environment-variables, hashable, text, validation
+    hs-source-dirs: demo
+    main-is: run.hs
+    other-modules: Demo.Environments, Demo.Output, Demo.Vars
+    build-depends: base, bytestring, containers, environment-variables, hashable, text, validation
+
+-- Asserts that the demo output is the same as what's in `demo/demo.txt`.
+test-suite test-demo
+    type: exitcode-stdio-1.0
+    default-language: Haskell2010
+    hs-source-dirs: demo
+    main-is: test.hs
+    other-modules: Demo.Environments, Demo.Output, Demo.Vars
+    build-depends: base, bytestring, containers, environment-variables, hashable, text, validation
