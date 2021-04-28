@@ -6,6 +6,8 @@ import qualified Env (Lift, Var, integerDecimal, Readable, Name, pattern NameTex
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read)
 import Env.Ops ((*), (+))
 
+import Demo.Vars
+
 import Control.Applicative (Applicative (..))
 import Control.Exception (Exception (displayException))
 import Data.Foldable (fold, toList)
@@ -125,15 +127,3 @@ demos =
     , Demo app $ (apiKey + apiSecret :: Env.Sum Text)
     , Demo problem $ (apiKey + apiSecret :: Env.Sum Text)
     ]
-
-verbosity :: Env.Var Integer
-verbosity = Env.integerDecimal "VERBOSITY"
-
-apiKey :: Env.Name
-apiKey = name "API_KEY"
-
-apiSecret :: Env.Name
-apiSecret = name "API_SECRET"
-
-home :: Env.Name
-home = name "HOME"
