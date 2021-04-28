@@ -39,7 +39,9 @@ module Env
     -- * Environment
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
-    varName, pattern VarNamed, pattern OptNamed, productNames, sumNames
+    varName, pattern VarNamed, pattern OptNamed, productNames, sumNames,
+    -- * Re-exports
+    Text
   ) where
 
 import Control.Applicative (Alternative (..), Applicative (..))

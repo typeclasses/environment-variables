@@ -4,8 +4,6 @@ module Demo.Environments where
 
 import Env
 
-import Data.Text (Text)
-
 data DemoEnv = DemoEnv{ demoEnvName :: Text, demoEnvDescription :: Text, demoEnvironment :: Environment }
 
 base :: DemoEnv
