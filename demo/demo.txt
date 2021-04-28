@@ -21,6 +21,9 @@ USER = "chris"
 VERBOSITY = "2"
 XDG_RUNTIME_DIR = "/user/run/1000"
 
+"problem" - Problematic environment wherein everything has gone wrong
+VERBOSITY = "abc"
+
 read API_KEY app = "j91bD2ncr"
 read API_KEY base = Environment variable ‘API_KEY’ is missing.
 read VERBOSITY app = 2

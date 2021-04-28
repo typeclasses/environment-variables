@@ -35,7 +35,7 @@ demoOutput :: LazyText.Text
 demoOutput = TextBuilder.toLazyText $ fold $ List.map (<> "\n") lines
   where
     lines =
-        (List.intercalate [""] $ List.map oneEnvOutput [base, app])
+        (List.intercalate [""] $ List.map oneEnvOutput [base, app, problem])
         <> [""]
         <> List.map oneDemoOutput demos
 
