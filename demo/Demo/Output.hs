@@ -1,6 +1,6 @@
 {-# options_ghc -Wall -fno-warn-unused-imports #-}
 
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, ScopedTypeVariables, PatternSynonyms #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, RankNTypes, ScopedTypeVariables, PatternSynonyms #-}
 
 module Demo.Output where
 
@@ -76,15 +76,22 @@ data Demo = forall v a. (DemoVar v a) => Demo{ demoEnv :: DemoEnv, demoVar :: v 
 
 demos :: [Demo]
 demos =
-    [ Demo app apiKey
-    , Demo base apiKey
-    , Demo app verbosity
-    , Demo problem verbosity
-    , Demo app $ (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
-    , Demo base $ (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
-    , Demo app $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
-    , Demo base $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
-    , Demo problem $ (pure (,) * home * verbosity :: Env.Product (Text, Integer))
-    , Demo app $ (apiKey + apiSecret :: Env.Sum Text)
-    , Demo problem $ (apiKey + apiSecret :: Env.Sum Text)
+  do
+    V v <- demoVars
+    e <- demoEnvs
+    [ Demo e v ]
+
+demoEnvs :: [DemoEnv]
+demoEnvs = [ base, app, problem ]
+
+data V = forall v a. DemoVar v a => V v
+
+demoVars :: [V]
+demoVars =
+    [ V apiKey
+    , V verbosity
+    , V (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
+    , V (pure (,) * home * verbosity :: Env.Product (Text, Integer))
+    , V (apiKey + apiSecret :: Env.Sum Text)
+    , V (apiKey + apiSecret :: Env.Sum Text)
     ]
