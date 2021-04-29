@@ -308,19 +308,19 @@ instance Readable Name Text
   where
     read name = fmap (justOr VarMissing name) $ lookup name
 
-instance Readable (Var a) a
+instance Readable (Var value) value
   where
     read (Var name parse) =
         fmap (`bindValidation` (justOr VarInvalid name . parse)) $
             read name
 
-instance Readable (Opt a) a
+instance Readable (Opt value) value
   where
     read (Opt name def parse) =
         fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
             lookup name
 
-instance Readable (Product v) v
+instance Readable (Product value) value
   where
     read = \case
       UseNoVars x -> pure (Success x)
@@ -328,7 +328,7 @@ instance Readable (Product v) v
       UseOneOpt v -> read v
       UseManyVars mf v -> pure (<*>) <*> read mf <*> read v
 
-instance Readable (Sum v) [v]
+instance Readable (Sum value) [value]
   where
     read = \case
       ConsiderNoVars -> pure (Success [])
