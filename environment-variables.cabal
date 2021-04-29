@@ -6,29 +6,35 @@ synopsis: Working with system environment variables
 build-type: Simple
 
 description:
+    Types that specify how to read information from environment
+    variables:
     .
-    The 'Var' and 'Opt' types represent a
-    variable name and a parser to turn a string from the
-    environment into a Haskell value, where the case in which
-    the variable name is not defined in the environment either
-    can't or can be handled, respectively.
-    Defining your vars this way, with the name and parser bundled
-    together, is helpful when building collections of
-    applications that have some environment requirements in
-    common.
+      * The 'Name' type represents the name of an environment variable.
+      * The 'Var' and 'Opt' types represent a name and a parser to turn
+        a string from the environment into a Haskell value, where the
+        case in which the variable name is not defined in the environment
+        either can't or can be handled, respectively.
+        Defining your vars this way, with the name and parser bundled
+        together, is helpful when building collections of
+        applications that have some environment requirements in
+        common.
+      * The 'Product' and 'Sum' types represent ways to obtain a value
+        from the environment by inspecting multiple environment variables.
+        The advantage of using these types instead of applying 'read'
+        repeatedly is that you can get more complete error output when
+        there are errors related to more than one variable.
     .
-    The 'Product' type represents a way to obtain a value from
-    the environment by inspecting multiple environment variables.
-    The advantage of using this type is that you can get more
-    complete error output when there are errors related to more
-    than one variable.
+    The 'read' function can be used to obtain the value
+    of an environment variable. It is polymorphic in two ways:
     .
-    We provide a polymorphic 'read' function that can be
-    used to obtain variables, as defined by either of the types
-    discussed above, from either the actual system environment or
-    from a map data structure.
-    The latter can be useful for testing your parsers with a mock
-    environment.
+      1. It can read environment variables defined using any of
+         the types discussed above — 'Name', 'Var', 'Opt',
+         'Product', 'Sum';
+      2. It can read from either the actual system environment or
+         from a map data structure.
+          The latter can be useful for testing your parsers with
+          a mock environment, and we take advantage of this
+          feature in this package's test suite.
 
 library
     default-language: Haskell2010
