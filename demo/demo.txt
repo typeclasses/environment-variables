@@ -39,3 +39,6 @@ read (HOME * VERBOSITY) problem = Environment variable ‘HOME’ is missing. En
 read (HOME + USER) base = ["/home/chris","chris"]
 read (HOME + USER) app = ["/home/chris","chris"]
 read (HOME + USER) problem = []
+read HOME base = True
+read HOME app = True
+read HOME problem = False

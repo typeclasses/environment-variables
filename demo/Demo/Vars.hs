@@ -5,7 +5,7 @@ module Demo.Vars where
 import Env
 import Env.Ops
 
-import Prelude (Integer, pure)
+import Prelude (Bool, Integer, pure)
 
 verbosity :: Var Integer
 verbosity = Env.integerDecimal "VERBOSITY"
@@ -21,6 +21,9 @@ apiCredentials = pure (,) * apiKey * apiSecret
 
 home :: Name
 home = name "HOME"
+
+homeIsPresent :: Opt Bool
+homeIsPresent = isPresent home
 
 homeAndVerbosity :: Product (Text, Integer)
 homeAndVerbosity = pure (,) * home * verbosity

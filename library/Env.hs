@@ -22,7 +22,7 @@ module Env
     -- ** Basics
     var, Var,
     -- ** Optional
-    optional, optionalMaybe, Opt,
+    optional, optionalMaybe, Opt, isPresent,
     -- ** Multiple
     Product,
     Sum,
@@ -46,11 +46,12 @@ module Env
 
 import Control.Applicative (Alternative (..), Applicative (..))
 import Control.Exception (Exception (displayException))
+import Data.Bool (Bool (True, False))
 import Data.Data (Data)
 import Data.Either (Either (..))
 import Data.Eq (Eq)
 import Data.Foldable (fold)
-import Data.Function ((.), ($))
+import Data.Function ((.), ($), const)
 import Data.Functor (Functor (..), fmap)
 import Data.Hashable (Hashable)
 import Data.List ((++))
@@ -284,6 +285,9 @@ optionalList = optionalAlternative
 
 optionalAlternative :: Alternative f => Var a -> Opt (f a)
 optionalAlternative (Var x f) = Opt x empty (fmap pure . f)
+
+isPresent :: Name -> Opt Bool
+isPresent x = Opt x False (const (Just True))
 
 ---
 
