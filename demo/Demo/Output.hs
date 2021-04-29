@@ -90,8 +90,7 @@ demoVars :: [V]
 demoVars =
     [ V apiKey
     , V verbosity
-    , V (pure (,) * apiKey * apiSecret :: Env.Product (Text, Text))
-    , V (pure (,) * home * verbosity :: Env.Product (Text, Integer))
-    , V (apiKey + apiSecret :: Env.Sum Text)
-    , V (apiKey + apiSecret :: Env.Sum Text)
+    , V apiCredentials
+    , V homeAndVerbosity
+    , V homeOrUser
     ]
