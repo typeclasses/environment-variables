@@ -27,7 +27,7 @@ module Env
     Product,
     Sum,
     -- ** Lifting
-    Lift (..), Addend (..), Factor (..),
+    Addend (..), Factor (..),
     -- ** Some particulars
     integerDecimal,
     -- * Using vars
@@ -110,6 +110,9 @@ var ::
     -> (Text -> Maybe value) -- ^ How to parse the text into a value.
     -> Var value
 var = Var
+
+text :: Name -> Var Text
+text x = var x Just
 
 varName :: Var a -> Name
 varName (Var x _) = x
@@ -337,25 +340,14 @@ instance Readable (Sum value) [value]
 
 ---
 
-{- | A /lift/ is a trivial function that converts from a smaller type to a more complex one. -}
-
-class Lift b a where
-    lift :: a -> b
-
-instance Lift (Var Text) Name where
-    lift x = Var x Just
-
-instance Lift (Opt (Maybe Text)) Name where
-    lift x = Opt x Nothing (Just . Just)
-
 class Factor a v | v -> a where factor :: v -> Product a
 instance Factor a (Var a) where factor = UseOneVar
 instance Factor a (Opt a) where factor = UseOneOpt
-instance Factor Text Name where factor = factor . lift @(Var Text)
+instance Factor Text Name where factor = factor . text
 
 class Addend a v | v -> a where addend :: v -> Sum a
 instance Addend a (Var a) where addend = ConsiderOneVar
-instance Addend Text Name where addend = addend . lift @(Var Text)
+instance Addend Text Name where addend = addend . text
 
 ---
 
