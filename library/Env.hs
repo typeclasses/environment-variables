@@ -27,7 +27,7 @@ module Env
     Product,
     Sum,
     -- ** Lifting
-    Lift (..), Addend (..),
+    Lift (..), Addend (..), Factor (..),
     -- ** Some particulars
     integerDecimal,
     -- * Using vars
@@ -342,23 +342,16 @@ instance Readable (Sum value) [value]
 class Lift b a where
     lift :: a -> b
 
-instance Lift (Product a) (Var a) where
-    lift = UseOneVar
-
-instance Lift (Product a) (Opt a) where
-    lift = UseOneOpt
-
 instance Lift (Var Text) Name where
     lift x = Var x Just
 
 instance Lift (Opt (Maybe Text)) Name where
     lift x = Opt x Nothing (Just . Just)
 
-instance Lift (Product Text) Name where
-    lift = lift . lift @(Var Text)
-
-instance Lift (Product (Maybe Text)) Name where
-    lift = lift . lift @(Opt (Maybe Text))
+class Factor a v | v -> a where factor :: v -> Product a
+instance Factor a (Var a) where factor = UseOneVar
+instance Factor a (Opt a) where factor = UseOneOpt
+instance Factor Text Name where factor = factor . lift @(Var Text)
 
 class Addend a v | v -> a where addend :: v -> Sum a
 instance Addend a (Var a) where addend = ConsiderOneVar
