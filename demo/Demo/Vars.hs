@@ -29,9 +29,7 @@ homeAndVerbosity :: Product (Text, Integer)
 homeAndVerbosity = pure (,) * home * verbosity
 
 homeOrVerbosity :: Sum (Either Text Integer)
-homeOrVerbosity =
-    (fmap Left (var home Just) :: Var (Either Text Integer)) +
-    (fmap Right verbosity :: Var (Either Text Integer))
+homeOrVerbosity = fmap Left (var home Just) + fmap Right verbosity
 
 user :: Name
 user = name "USER"

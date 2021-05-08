@@ -27,7 +27,7 @@ module Env
     Product,
     Sum,
     -- ** Lifting
-    Lift (..),
+    Lift (..), Addend (..),
     -- ** Some particulars
     integerDecimal,
     -- * Using vars
@@ -337,16 +337,13 @@ instance Readable (Sum value) [value]
 
 ---
 
-{- | A /lift/ is a trivial function that converts from a smaller type to a more complex one. Since 'lift' is polymorphic in both domain and codomain, explicit type annotations are recommended. -}
+{- | A /lift/ is a trivial function that converts from a smaller type to a more complex one. -}
 
 class Lift b a where
     lift :: a -> b
 
 instance Lift (Product a) (Var a) where
     lift = UseOneVar
-
-instance Lift (Sum a) (Var a) where
-    lift = ConsiderOneVar
 
 instance Lift (Product a) (Opt a) where
     lift = UseOneOpt
@@ -363,8 +360,9 @@ instance Lift (Product Text) Name where
 instance Lift (Product (Maybe Text)) Name where
     lift = lift . lift @(Opt (Maybe Text))
 
-instance Lift (Sum Text) Name where
-    lift = lift . lift @(Var Text)
+class Addend a v | v -> a where addend :: v -> Sum a
+instance Addend a (Var a) where addend = ConsiderOneVar
+instance Addend Text Name where addend = addend . lift @(Var Text)
 
 ---
 

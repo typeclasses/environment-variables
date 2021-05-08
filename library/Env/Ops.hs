@@ -12,5 +12,5 @@ import Data.Semigroup ((<>))
 (*) :: Lift (Product a) x => Product (a -> b) -> x -> Product b
 p * x = p <*> lift x
 
-(+) :: (Lift (Sum a) x, Lift (Sum a) y) => x -> y -> Sum a
-x + y = lift x <> lift y
+(+) :: (Addend a x, Addend a y) => x -> y -> Sum a
+x + y = addend x <> addend y
