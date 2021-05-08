@@ -99,4 +99,5 @@ demoVars =
     , V homeOrVerbosity
     , V homeOrUser
     , V homeIsPresent
+    , V locale
     ]

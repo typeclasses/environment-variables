@@ -36,3 +36,6 @@ user = name "USER"
 
 homeOrUser :: Sum Text
 homeOrUser = home + user
+
+locale :: Sum Text
+locale = name "LANG" + name "LC_ALL"

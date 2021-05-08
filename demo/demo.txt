@@ -45,3 +45,6 @@ read (HOME + USER) problem = []
 read HOME base = True
 read HOME app = True
 read HOME problem = False
+read (LANG + LC_ALL) base = ["en_US.UTF-8"]
+read (LANG + LC_ALL) app = ["en_US.UTF-8"]
+read (LANG + LC_ALL) problem = []
