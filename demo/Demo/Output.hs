@@ -96,6 +96,7 @@ demoVars =
     , V verbosity
     , V apiCredentials
     , V homeAndVerbosity
+    , V homeOrVerbosity
     , V homeOrUser
     , V homeIsPresent
     ]

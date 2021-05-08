@@ -5,7 +5,7 @@ module Demo.Vars where
 import Env
 import Env.Ops
 
-import Prelude (Bool, Integer, pure)
+import Prelude (Bool, Integer, Either (..), Maybe (..), fmap, pure)
 
 verbosity :: Var Integer
 verbosity = Env.integerDecimal "VERBOSITY"
@@ -27,6 +27,11 @@ homeIsPresent = isPresent home
 
 homeAndVerbosity :: Product (Text, Integer)
 homeAndVerbosity = pure (,) * home * verbosity
+
+homeOrVerbosity :: Sum (Either Text Integer)
+homeOrVerbosity =
+    (fmap Left (var home Just) :: Var (Either Text Integer)) +
+    (fmap Right verbosity :: Var (Either Text Integer))
 
 user :: Name
 user = name "USER"
