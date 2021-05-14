@@ -134,6 +134,14 @@ pattern OptionalNamed x <- Optional x _ _
 
 ---
 
+data Var value =
+    Var
+      Name -- ^ The name of the environment variable to read.
+      (Maybe value) -- ^ A value to use instead of applying the parser if the name is not present in the environment.
+      (Text -> Maybe value) -- ^ How to parse the text into a value.
+
+---
+
 newtype Environment = EnvironmentMap (Map Name Text)
     deriving stock (Eq, Ord, Show, Data)
     deriving newtype (Semigroup, Monoid)
@@ -353,6 +361,8 @@ instance Addend Text Name where
 
 class IsVar a v | v -> a where
     name :: v -> Name
+instance IsVar a (Var a) where
+    name (Var x _ _) = x
 instance IsVar Text Name where
     name x = x
 instance IsVar a (Required a) where
