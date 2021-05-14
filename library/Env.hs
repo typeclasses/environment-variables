@@ -139,6 +139,13 @@ data Var value =
       Name -- ^ The name of the environment variable to read.
       (Maybe value) -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
+  deriving stock Functor
+
+instance IsString (Var Text) where
+    fromString x = Var (NameString x) Nothing Just
+
+instance IsString (Var (Maybe Text)) where
+    fromString x = Var (NameString x) (Just (Just "")) (Just . Just)
 
 ---
 
@@ -188,8 +195,7 @@ instance Context ((->) Environment)
 data Product a
   where
     UseNoVars :: a -> Product a
-    UseOneVar :: Required a -> Product a
-    UseOneOpt :: Optional a -> Product a
+    UseOneVar :: Var a -> Product a
     UseManyVars :: Product (a -> b) -> Product a -> Product b
 
 instance IsString (Product Text)
@@ -198,14 +204,13 @@ instance IsString (Product Text)
 
 instance IsString (Product (Maybe Text))
   where
-    fromString = UseOneOpt . fromString
+    fromString = UseOneVar . fromString
 
 instance Functor Product
   where
     fmap f = \case
       UseNoVars x -> UseNoVars (f x)
       UseOneVar x -> UseOneVar (fmap f x)
-      UseOneOpt x -> UseOneOpt (fmap f x)
       UseManyVars mf ma -> UseManyVars (fmap (f .) mf) ma
 
 instance Applicative Product
@@ -217,7 +222,6 @@ instance Applicative Product
       case mf of
         UseNoVars (f :: a -> b) -> fmap f multi_a
         UseOneVar vf -> UseManyVars (UseOneVar vf) multi_a
-        UseOneOpt vf -> UseManyVars (UseOneOpt vf) multi_a
         UseManyVars (multi_cab :: Product (c -> a -> b)) (v :: Product c) -> UseManyVars multi_cb v
           where
             multi_cb :: Product (c -> b)
@@ -227,8 +231,7 @@ productNames :: Product a -> Set Name
 productNames =
   \case
     UseNoVars _ -> mempty
-    UseOneVar (RequiredNamed x) -> Set.singleton x
-    UseOneOpt (OptionalNamed x) -> Set.singleton x
+    UseOneVar (name -> x) -> Set.singleton x
     UseManyVars a b -> productNames a <> productNames b
 
 ---
@@ -337,7 +340,6 @@ instance Readable (Product value) value
     read = \case
       UseNoVars x -> pure (Success x)
       UseOneVar v -> read v
-      UseOneOpt v -> read v
       UseManyVars mf v -> pure (<*>) <*> read mf <*> read v
 
 instance Readable (Sum value) [value]
@@ -352,9 +354,9 @@ instance Readable (Sum value) [value]
 class Factor a v | v -> a where
     factor :: v -> Product a
 instance Factor a (Required a) where
-    factor = UseOneVar
+    factor = UseOneVar . var
 instance Factor a (Optional a) where
-    factor = UseOneOpt
+    factor = UseOneVar . var
 instance Factor Text Name where
     factor = factor . text
 
