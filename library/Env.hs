@@ -24,10 +24,10 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Optional, isPresent,
     -- ** Multiple
-    Product, prime,
+    Product,
     Sum,
     -- ** Classes
-    Addend (..), IsVar (..),
+    Addend (..), IsProduct (..), IsVar (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -190,52 +190,61 @@ instance Context ((->) Environment)
 
 ---
 
+{- | The product of multiplying one or more environment variables. -}
+
+data NontrivialProduct a =
+    UseOneVar (Var a)
+    | forall x. Ap (NontrivialProduct (x -> a)) (NontrivialProduct x)
+
+deriving stock instance Functor NontrivialProduct
+
+instance IsString (NontrivialProduct Text)
+  where
+    fromString = UseOneVar . fromString
+
+instance IsString (NontrivialProduct (Maybe Text))
+  where
+    fromString = UseOneVar . fromString
+
+nontrivialProductNames :: NontrivialProduct a -> Set Name
+nontrivialProductNames = r
+  where
+    r :: forall x. NontrivialProduct x -> Set Name
+    r = \case
+      UseOneVar (name -> x) -> Set.singleton x
+      Ap f x -> r f <> r x
+
+---
+
 {- | The product of multiplying any number of individual environment variables. -}
 
-data Product a
-  where
-    UseNoVars :: a -> Product a
-    UseOneVar :: Var a -> Product a
-    UseManyVars :: Product (a -> b) -> Product a -> Product b
+data Product a = ProductTrivial a | ProductNontrivial (NontrivialProduct a)
+
+deriving stock instance Functor Product
 
 instance IsString (Product Text)
   where
-    fromString = UseOneVar . fromString
+    fromString = ProductNontrivial . fromString
 
 instance IsString (Product (Maybe Text))
   where
-    fromString = UseOneVar . fromString
-
-instance Functor Product
-  where
-    fmap f = \case
-      UseNoVars x -> UseNoVars (f x)
-      UseOneVar x -> UseOneVar (fmap f x)
-      UseManyVars mf ma -> UseManyVars (fmap (f .) mf) ma
+    fromString = ProductNontrivial . fromString
 
 instance Applicative Product
   where
-    pure = UseNoVars
+    pure = ProductTrivial
 
     (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
-    mf <*> (multi_a :: Product a) =
-      case mf of
-        UseNoVars (f :: a -> b) -> fmap f multi_a
-        UseOneVar vf -> UseManyVars (UseOneVar vf) multi_a
-        UseManyVars (multi_cab :: Product (c -> a -> b)) (v :: Product c) -> UseManyVars multi_cb v
-          where
-            multi_cb :: Product (c -> b)
-            multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
-
-prime :: Var a -> Product a
-prime = UseOneVar
+    ProductTrivial f <*> ProductTrivial x = ProductTrivial (f x)
+    ProductNontrivial f <*> ProductNontrivial x = ProductNontrivial (Ap f x)
+    ProductNontrivial f <*> ProductTrivial x = ProductNontrivial (fmap ($ x) f)
+    ProductTrivial f <*> ProductNontrivial x = ProductNontrivial (fmap f x)
 
 productNames :: Product a -> Set Name
 productNames =
   \case
-    UseNoVars _ -> mempty
-    UseOneVar (name -> x) -> Set.singleton x
-    UseManyVars a b -> productNames a <> productNames b
+    ProductTrivial _ -> Set.empty
+    ProductNontrivial x -> nontrivialProductNames x
 
 ---
 
@@ -338,12 +347,17 @@ instance Readable (Var value) value
       Var name Nothing parse -> read (Required name parse)
       Var name (Just def) parse -> read (Optional name def parse)
 
+instance Readable (NontrivialProduct value) value
+  where
+    read = \case
+      UseOneVar v -> read v
+      Ap mf v -> pure (<*>) <*> read mf <*> read v
+
 instance Readable (Product value) value
   where
     read = \case
-      UseNoVars x -> pure (Success x)
-      UseOneVar v -> read v
-      UseManyVars mf v -> pure (<*>) <*> read mf <*> read v
+      ProductTrivial x -> pure (Success x)
+      ProductNontrivial x -> read x
 
 instance Readable (Sum value) [value]
   where
@@ -360,6 +374,13 @@ instance Addend a (Required a) where
     addend = ConsiderOneVar
 instance Addend Text Name where
     addend = addend . text
+
+class IsProduct a p | p -> a where
+    prime :: Var a -> p
+instance IsProduct a (NontrivialProduct a) where
+    prime = UseOneVar
+instance IsProduct a (Product a) where
+    prime = ProductNontrivial . UseOneVar
 
 class IsVar a v | v -> a where
     name :: v -> Name
