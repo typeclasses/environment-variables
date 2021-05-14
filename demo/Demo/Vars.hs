@@ -4,11 +4,12 @@ module Demo.Vars where
 
 import Env
 import Env.Ops
+import Env.Sundries
 
 import Prelude (Bool, Integer, Either (..), Maybe (..), fmap, pure)
 
 verbosity :: Required Integer
-verbosity = Env.integerDecimal "VERBOSITY"
+verbosity = integerDecimal "VERBOSITY"
 
 apiKey :: Name
 apiKey = name "API_KEY"

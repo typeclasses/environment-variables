@@ -28,8 +28,6 @@ module Env
     Sum,
     -- ** Lifting
     Addend (..), Factor (..),
-    -- ** Some particulars
-    integerDecimal,
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -407,16 +405,3 @@ a ! b = a <> " " <> b
 -- | Surround a string with slanted quotation marks.
 quote :: (Semigroup a, IsString a) => a -> a
 quote x = "‘" <> x <> "’"
-
----
-
-integerDecimal :: Name -> Required Integer
-integerDecimal n = parse n $ textRead $ LazyText.signed LazyText.decimal
-
-textRead :: LazyText.Reader a -> Text -> Maybe a
-textRead r = f . r . LazyText.fromStrict
-  where
-    f =
-      \case
-        Right (a, t) | LazyText.null t -> Just a
-        _ -> Nothing
