@@ -96,10 +96,6 @@ pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
 data Required value = Required Name (Text -> Maybe value)
     deriving stock Functor
 
-instance IsString (Required Text)
-  where
-    fromString x = Required (fromString x) Just
-
 parse ::
     Name -- ^ The name of the environment variable to read.
     -> (Text -> Maybe value) -- ^ How to parse the text into a value.
@@ -124,10 +120,6 @@ data Optional value =
       (Text -> Maybe value) -- ^ How to parse the text into a value.
     deriving stock Functor
 
-instance IsString (Optional (Maybe Text))
-  where
-    fromString x = Optional (fromString x) Nothing (Just . Just)
-
 pattern OptionalNamed :: Name -> Optional value
 pattern OptionalNamed x <- Optional x _ _
 {-# COMPLETE OptionalNamed #-}
@@ -140,12 +132,6 @@ data Var value =
       (Maybe value) -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
   deriving stock Functor
-
-instance IsString (Var Text) where
-    fromString x = Var (NameString x) Nothing Just
-
-instance IsString (Var (Maybe Text)) where
-    fromString x = Var (NameString x) (Just (Just "")) (Just . Just)
 
 ---
 
@@ -207,14 +193,6 @@ data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
 
 deriving stock instance Functor NontrivialProduct
 
-instance IsString (NontrivialProduct Text)
-  where
-    fromString = UseOneVar . fromString
-
-instance IsString (NontrivialProduct (Maybe Text))
-  where
-    fromString = UseOneVar . fromString
-
 nontrivialProductNames :: NontrivialProduct a -> Set Name
 nontrivialProductNames = \case
     UseOneVar (name -> x) -> Set.singleton x
@@ -227,14 +205,6 @@ nontrivialProductNames = \case
 data Product a = UseNoVars a | UseSomeVars (NontrivialProduct a)
 
 deriving stock instance Functor Product
-
-instance IsString (Product Text)
-  where
-    fromString = UseSomeVars . fromString
-
-instance IsString (Product (Maybe Text))
-  where
-    fromString = UseSomeVars . fromString
 
 instance Applicative Product
   where
@@ -259,10 +229,6 @@ data Sum a
     ConsiderNoVars :: Sum a
     ConsiderOneVar :: Required a -> Sum a
     ConsiderManyVars :: Sum a -> Sum a -> Sum a
-
-instance IsString (Sum Text)
-  where
-    fromString = ConsiderOneVar . fromString
 
 instance Functor Sum
   where
