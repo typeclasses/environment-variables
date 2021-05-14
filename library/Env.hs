@@ -37,7 +37,7 @@ module Env
     -- * Environment
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
-    varName, pattern RequiredNamed, pattern OptionalNamed, productNames, sumNames,
+    varName, productNames, sumNames,
     -- * Re-exports
     Text
   ) where
@@ -112,6 +112,8 @@ pattern RequiredNamed :: Name -> Required value
 pattern RequiredNamed x <- Required x _
 {-# COMPLETE RequiredNamed #-}
 
+---
+
 -- | A single optional environment variable.
 data Optional value =
     Optional
@@ -119,10 +121,6 @@ data Optional value =
       value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
     deriving stock Functor
-
-pattern OptionalNamed :: Name -> Optional value
-pattern OptionalNamed x <- Optional x _ _
-{-# COMPLETE OptionalNamed #-}
 
 ---
 

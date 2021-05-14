@@ -1,10 +1,10 @@
 {-# options_ghc -Wall -fno-warn-unused-imports #-}
 
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, RankNTypes, ScopedTypeVariables, PatternSynonyms #-}
+{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, RankNTypes, ScopedTypeVariables, PatternSynonyms, ViewPatterns #-}
 
 module Demo.Output where
 
-import qualified Env (Required, Optional, Readable, Name, pattern NameText, pattern RequiredNamed, pattern OptionalNamed, Item (Item), productNames, sumNames)
+import qualified Env (Required, Optional, Readable, Name, pattern NameText, Item (Item), productNames, sumNames, name)
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, read)
 import Env.Ops ((*), (+))
 
@@ -62,11 +62,11 @@ instance DemoVar Env.Name Text
 
 instance Show a => DemoVar (Env.Required a) a
   where
-    showDemoVar (Env.RequiredNamed x) = showDemoVar x
+    showDemoVar (Env.name -> x) = showDemoVar x
 
 instance Show a => DemoVar (Env.Optional a) a
   where
-    showDemoVar (Env.OptionalNamed x) = showDemoVar x
+    showDemoVar (Env.name -> x) = showDemoVar x
 
 instance Show a => DemoVar (Env.Product a) a
   where
