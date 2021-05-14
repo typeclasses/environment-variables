@@ -20,7 +20,7 @@ module Env
   (
     -- * Defining vars
     -- ** Basics
-    var, Required,
+    parse, Required,
     -- ** Optional
     optional, optionalMaybe, Optional, isPresent,
     -- ** Multiple
@@ -105,14 +105,14 @@ instance IsString (Required Text)
   where
     fromString x = Required (fromString x) Just
 
-var ::
+parse ::
     Name -- ^ The name of the environment variable to read.
     -> (Text -> Maybe value) -- ^ How to parse the text into a value.
     -> Required value
-var = Required
+parse = Required
 
 text :: Name -> Required Text
-text x = var x Just
+text x = Required x Just
 
 varName :: Required a -> Name
 varName (Required x _) = x
@@ -411,7 +411,7 @@ quote x = "‘" <> x <> "’"
 ---
 
 integerDecimal :: Name -> Required Integer
-integerDecimal n = var n $ textRead $ LazyText.signed LazyText.decimal
+integerDecimal n = parse n $ textRead $ LazyText.signed LazyText.decimal
 
 textRead :: LazyText.Reader a -> Text -> Maybe a
 textRead r = f . r . LazyText.fromStrict
