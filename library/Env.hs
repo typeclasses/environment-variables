@@ -361,14 +361,19 @@ instance Addend Text Name where
 
 class IsVar a v | v -> a where
     name :: v -> Name
+    var :: v -> Var a
 instance IsVar a (Var a) where
     name (Var x _ _) = x
+    var x = x
 instance IsVar Text Name where
     name x = x
+    var x = Var x Nothing Just
 instance IsVar a (Required a) where
     name (Required x _) = x
+    var (Required x f) = Var x Nothing f
 instance IsVar a (Optional a) where
     name (Optional x _ _) = x
+    var (Optional x d f) = Var x (Just d) f
 
 ---
 
