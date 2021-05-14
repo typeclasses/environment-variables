@@ -24,10 +24,10 @@ module Env
     -- ** Optional
     optional, optionalMaybe, Optional, isPresent,
     -- ** Multiple
-    Product,
+    Product, prime,
     Sum,
     -- ** Classes
-    Addend (..), Factor (..), IsVar (..),
+    Addend (..), IsVar (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -227,6 +227,9 @@ instance Applicative Product
             multi_cb :: Product (c -> b)
             multi_cb = pure (\f c a -> f a c) <*> multi_cab <*> multi_a
 
+prime :: Var a -> Product a
+prime = UseOneVar
+
 productNames :: Product a -> Set Name
 productNames =
   \case
@@ -350,15 +353,6 @@ instance Readable (Sum value) [value]
       ConsiderManyVars x y -> pure (liftA2 (++)) <*> read x <*> read y
 
 ---
-
-class Factor a v | v -> a where
-    factor :: v -> Product a
-instance Factor a (Required a) where
-    factor = UseOneVar . var
-instance Factor a (Optional a) where
-    factor = UseOneVar . var
-instance Factor Text Name where
-    factor = factor . text
 
 class Addend a v | v -> a where
     addend :: v -> Sum a
