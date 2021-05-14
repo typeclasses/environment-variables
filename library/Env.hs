@@ -190,7 +190,7 @@ instance Context ((->) Environment)
 
 ---
 
-{- | The product of multiplying any number of individual environment variables. Construct 'Product' values using 'lift', 'Applicative' combinators, and string overloading. -}
+{- | The product of multiplying any number of individual environment variables. -}
 
 data Product a
   where
