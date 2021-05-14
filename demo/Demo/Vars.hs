@@ -12,16 +12,16 @@ verbosity :: Required Integer
 verbosity = integerDecimal "VERBOSITY"
 
 apiKey :: Name
-apiKey = name "API_KEY"
+apiKey = NameText "API_KEY"
 
 apiSecret :: Name
-apiSecret = name "API_SECRET"
+apiSecret = NameText "API_SECRET"
 
 apiCredentials :: Product (Text, Text)
 apiCredentials = pure (,) * apiKey * apiSecret
 
 home :: Name
-home = name "HOME"
+home = NameText "HOME"
 
 homeIsPresent :: Optional Bool
 homeIsPresent = isPresent home
@@ -33,10 +33,10 @@ homeOrVerbosity :: Sum (Either Text Integer)
 homeOrVerbosity = fmap Left (parse home Just) + fmap Right verbosity
 
 user :: Name
-user = name "USER"
+user = NameText "USER"
 
 homeOrUser :: Sum Text
 homeOrUser = home + user
 
 locale :: Sum Text
-locale = name "LANG" + name "LC_ALL"
+locale = NameText "LANG" + NameText "LC_ALL"

@@ -31,7 +31,7 @@ module Env
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
-    Name, name, pattern NameText, pattern NameString,
+    Name, pattern NameText, pattern NameString,
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Environment
@@ -83,9 +83,6 @@ newtype Name = NameText Text
     deriving stock (Eq, Ord, Show, Data, Generic)
     deriving anyclass (Hashable)
     deriving newtype (IsString, Semigroup, Monoid)
-
-name :: Text -> Name
-name = NameText
 
 pattern NameString :: String -> Name
 pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
