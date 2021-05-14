@@ -10,10 +10,10 @@ description:
     variables:
     .
       * The 'Name' type represents the name of an environment variable.
-      * The 'Required' and 'Optional' types represent a name and a parser to turn
-        a string from the environment into a Haskell value, where the
-        case in which the variable name is not defined in the environment
-        either can't or can be handled, respectively.
+      * The 'Required' and 'Optional' types represent a name and a parser
+        to turn a string from the environment into a Haskell value, where
+        the case in which the variable name is not defined in the
+        environment either can't or can be handled, respectively.
         Defining your vars this way, with the name and parser bundled
         together, is helpful when building collections of
         applications that have some environment requirements in
@@ -32,9 +32,9 @@ description:
          'Product', 'Sum';
       2. It can read from either the actual system environment or
          from a map data structure.
-          The latter can be useful for testing your parsers with
-          a mock environment, and we take advantage of this
-          feature in this package's test suite.
+         The latter can be useful for testing your parsers with
+         a mock environment, and we take advantage of this
+         feature in this package's test suite.
 
 library
     default-language: Haskell2010
