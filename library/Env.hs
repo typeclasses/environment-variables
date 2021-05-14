@@ -218,17 +218,17 @@ nontrivialProductNames = r
 
 {- | The product of multiplying any number of individual environment variables. -}
 
-data Product a = UseNoVars a | ProductNontrivial (NontrivialProduct a)
+data Product a = UseNoVars a | UseSomeVars (NontrivialProduct a)
 
 deriving stock instance Functor Product
 
 instance IsString (Product Text)
   where
-    fromString = ProductNontrivial . fromString
+    fromString = UseSomeVars . fromString
 
 instance IsString (Product (Maybe Text))
   where
-    fromString = ProductNontrivial . fromString
+    fromString = UseSomeVars . fromString
 
 instance Applicative Product
   where
@@ -236,15 +236,15 @@ instance Applicative Product
 
     (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
     UseNoVars f <*> UseNoVars x = UseNoVars (f x)
-    ProductNontrivial f <*> ProductNontrivial x = ProductNontrivial (Ap f x)
-    ProductNontrivial f <*> UseNoVars x = ProductNontrivial (fmap ($ x) f)
-    UseNoVars f <*> ProductNontrivial x = ProductNontrivial (fmap f x)
+    UseSomeVars f <*> UseSomeVars x = UseSomeVars (Ap f x)
+    UseSomeVars f <*> UseNoVars x = UseSomeVars (fmap ($ x) f)
+    UseNoVars f <*> UseSomeVars x = UseSomeVars (fmap f x)
 
 productNames :: Product a -> Set Name
 productNames =
   \case
     UseNoVars _ -> Set.empty
-    ProductNontrivial x -> nontrivialProductNames x
+    UseSomeVars x -> nontrivialProductNames x
 
 ---
 
@@ -357,7 +357,7 @@ instance Readable (Product value) value
   where
     read = \case
       UseNoVars x -> pure (Success x)
-      ProductNontrivial x -> read x
+      UseSomeVars x -> read x
 
 instance Readable (Sum value) [value]
   where
@@ -380,7 +380,7 @@ class IsProduct a p | p -> a where
 instance IsProduct a (NontrivialProduct a) where
     prime = UseOneVar
 instance IsProduct a (Product a) where
-    prime = ProductNontrivial . UseOneVar
+    prime = UseSomeVars . UseOneVar
 
 class IsVar a v | v -> a where
     name :: v -> Name
