@@ -190,11 +190,20 @@ instance Context ((->) Environment)
 
 ---
 
+{- | The product of multiplying two or more environment variables. -}
+
+data Composite a = forall x. Composite (NontrivialProduct (x -> a)) (NontrivialProduct x)
+
+deriving stock instance Functor Composite
+
+compositeNames :: Composite a -> Set Name
+compositeNames (Composite f x) = nontrivialProductNames f <> nontrivialProductNames x
+
+---
+
 {- | The product of multiplying one or more environment variables. -}
 
-data NontrivialProduct a =
-    UseOneVar (Var a)
-    | forall x. Ap (NontrivialProduct (x -> a)) (NontrivialProduct x)
+data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
 
 deriving stock instance Functor NontrivialProduct
 
@@ -207,12 +216,9 @@ instance IsString (NontrivialProduct (Maybe Text))
     fromString = UseOneVar . fromString
 
 nontrivialProductNames :: NontrivialProduct a -> Set Name
-nontrivialProductNames = r
-  where
-    r :: forall x. NontrivialProduct x -> Set Name
-    r = \case
-      UseOneVar (name -> x) -> Set.singleton x
-      Ap f x -> r f <> r x
+nontrivialProductNames = \case
+    UseOneVar (name -> x) -> Set.singleton x
+    UseManyVars x -> compositeNames x
 
 ---
 
@@ -236,7 +242,7 @@ instance Applicative Product
 
     (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
     UseNoVars f <*> UseNoVars x = UseNoVars (f x)
-    UseSomeVars f <*> UseSomeVars x = UseSomeVars (Ap f x)
+    UseSomeVars f <*> UseSomeVars x = UseSomeVars (UseManyVars (Composite f x))
     UseSomeVars f <*> UseNoVars x = UseSomeVars (fmap ($ x) f)
     UseNoVars f <*> UseSomeVars x = UseSomeVars (fmap f x)
 
@@ -351,7 +357,11 @@ instance Readable (NontrivialProduct value) value
   where
     read = \case
       UseOneVar v -> read v
-      Ap mf v -> pure (<*>) <*> read mf <*> read v
+      UseManyVars v -> read v
+
+instance Readable (Composite value) value
+  where
+    read (Composite mf v) = pure (<*>) <*> read mf <*> read v
 
 instance Readable (Product value) value
   where
