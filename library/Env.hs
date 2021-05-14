@@ -27,7 +27,7 @@ module Env
     Product,
     Sum,
     -- ** Classes
-    Addend (..), IsProduct (..), IsVar (..),
+    Addend (..), IsProduct (..), IsVar (..), HasNameSet (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -37,7 +37,7 @@ module Env
     -- * Environment
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
-    varName, productNames, sumNames,
+    varName,
     -- * Re-exports
     Text
   ) where
@@ -176,9 +176,6 @@ data Composite a = forall x. Composite (NontrivialProduct (x -> a)) (NontrivialP
 
 deriving stock instance Functor Composite
 
-compositeNames :: Composite a -> Set Name
-compositeNames (Composite f x) = nontrivialProductNames f <> nontrivialProductNames x
-
 ---
 
 {- | The product of multiplying one or more environment variables. -}
@@ -186,11 +183,6 @@ compositeNames (Composite f x) = nontrivialProductNames f <> nontrivialProductNa
 data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
 
 deriving stock instance Functor NontrivialProduct
-
-nontrivialProductNames :: NontrivialProduct a -> Set Name
-nontrivialProductNames = \case
-    UseOneVar (name -> x) -> Set.singleton x
-    UseManyVars x -> compositeNames x
 
 ---
 
@@ -209,12 +201,6 @@ instance Applicative Product
     UseSomeVars f <*> UseSomeVars x = UseSomeVars (UseManyVars (Composite f x))
     UseSomeVars f <*> UseNoVars x = UseSomeVars (fmap ($ x) f)
     UseNoVars f <*> UseSomeVars x = UseSomeVars (fmap f x)
-
-productNames :: Product a -> Set Name
-productNames =
-  \case
-    UseNoVars _ -> Set.empty
-    UseSomeVars x -> nontrivialProductNames x
 
 ---
 
@@ -240,13 +226,6 @@ instance Semigroup (Sum a)
 instance Monoid (Sum a)
   where
     mempty = ConsiderNoVars
-
-sumNames :: Sum a -> Set Name
-sumNames =
-  \case
-    ConsiderNoVars -> mempty
-    ConsiderOneVar (name -> x) -> Set.singleton x
-    ConsiderManyVars a b -> sumNames a <> sumNames b
 
 ---
 
@@ -367,6 +346,28 @@ instance IsVar a (Required a) where
 instance IsVar a (Optional a) where
     name (Optional x _ _) = x
     var (Optional x d f) = Var x (Just d) f
+
+class HasNameSet a where
+    nameSet :: a -> Set Name
+instance HasNameSet (Name) where
+    nameSet = Set.singleton
+instance HasNameSet (Var a) where
+    nameSet = nameSet . name
+instance HasNameSet (Composite a) where
+    nameSet (Composite f x) = nameSet f <> nameSet x
+instance HasNameSet (NontrivialProduct a) where
+    nameSet = \case
+        UseOneVar x -> nameSet x
+        UseManyVars x -> nameSet x
+instance HasNameSet (Product a) where
+    nameSet = \case
+        UseNoVars _ -> Set.empty
+        UseSomeVars x -> nameSet x
+instance HasNameSet (Sum a) where
+    nameSet = \case
+        ConsiderNoVars -> mempty
+        ConsiderOneVar (name -> x) -> nameSet x
+        ConsiderManyVars a b -> nameSet a <> nameSet b
 
 ---
 

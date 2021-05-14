@@ -4,7 +4,7 @@
 
 module Demo.Output where
 
-import qualified Env (Required, Optional, Readable, Name, pattern NameText, Item (Item), productNames, sumNames, name)
+import qualified Env (Required, Optional, Readable, Name, pattern NameText, Item (Item), nameSet, name)
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, read)
 import Env.Ops ((*), (+))
 
@@ -70,11 +70,11 @@ instance Show a => DemoVar (Env.Optional a) a
 
 instance Show a => DemoVar (Env.Product a) a
   where
-    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.productNames
+    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
 instance Show a => DemoVar (Env.Sum a) [a]
   where
-    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.sumNames
+    showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
 data Demo = forall v a. (DemoVar v a) => Demo{ demoEnv :: DemoEnv, demoVar :: v }
 
