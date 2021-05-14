@@ -26,8 +26,8 @@ module Env
     -- ** Multiple
     Product,
     Sum,
-    -- ** Lifting
-    Addend (..), Factor (..),
+    -- ** Classes
+    Addend (..), Factor (..), IsVar (..),
     -- * Using vars
     Readable (..), Context (..),
     -- * Var names
@@ -335,14 +335,30 @@ instance Readable (Sum value) [value]
 
 ---
 
-class Factor a v | v -> a where factor :: v -> Product a
-instance Factor a (Required a) where factor = UseOneVar
-instance Factor a (Optional a) where factor = UseOneOpt
-instance Factor Text Name where factor = factor . text
+class Factor a v | v -> a where
+    factor :: v -> Product a
+instance Factor a (Required a) where
+    factor = UseOneVar
+instance Factor a (Optional a) where
+    factor = UseOneOpt
+instance Factor Text Name where
+    factor = factor . text
 
-class Addend a v | v -> a where addend :: v -> Sum a
-instance Addend a (Required a) where addend = ConsiderOneVar
-instance Addend Text Name where addend = addend . text
+class Addend a v | v -> a where
+    addend :: v -> Sum a
+instance Addend a (Required a) where
+    addend = ConsiderOneVar
+instance Addend Text Name where
+    addend = addend . text
+
+class IsVar a v | v -> a where
+    name :: v -> Name
+instance IsVar Text Name where
+    name x = x
+instance IsVar a (Required a) where
+    name (Required x _) = x
+instance IsVar a (Optional a) where
+    name (Optional x _ _) = x
 
 ---
 
