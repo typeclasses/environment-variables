@@ -10,7 +10,7 @@ description:
     variables:
     .
       * The 'Name' type represents the name of an environment variable.
-      * The 'Var' and 'Opt' types represent a name and a parser to turn
+      * The 'Var' and 'Optional' types represent a name and a parser to turn
         a string from the environment into a Haskell value, where the
         case in which the variable name is not defined in the environment
         either can't or can be handled, respectively.
@@ -28,7 +28,7 @@ description:
     of an environment variable. It is polymorphic in two ways:
     .
       1. It can read environment variables defined using any of
-         the types discussed above — 'Name', 'Var', 'Opt',
+         the types discussed above — 'Name', 'Var', 'Optional',
          'Product', 'Sum';
       2. It can read from either the actual system environment or
          from a map data structure.

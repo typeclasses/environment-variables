@@ -22,7 +22,7 @@ module Env
     -- ** Basics
     var, Var,
     -- ** Optional
-    optional, optionalMaybe, Opt, isPresent,
+    optional, optionalMaybe, Optional, isPresent,
     -- ** Multiple
     Product,
     Sum,
@@ -39,7 +39,7 @@ module Env
     -- * Environment
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
-    varName, pattern VarNamed, pattern OptNamed, productNames, sumNames,
+    varName, pattern VarNamed, pattern OptionalNamed, productNames, sumNames,
     -- * Re-exports
     Text
   ) where
@@ -122,20 +122,20 @@ pattern VarNamed x <- Var x _
 {-# COMPLETE VarNamed #-}
 
 -- | A single optional environment variable.
-data Opt value =
-    Opt
+data Optional value =
+    Optional
       Name -- ^ The name of the environment variable to read.
       value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
       (Text -> Maybe value) -- ^ How to parse the text into a value.
     deriving stock Functor
 
-instance IsString (Opt (Maybe Text))
+instance IsString (Optional (Maybe Text))
   where
-    fromString x = Opt (fromString x) Nothing (Just . Just)
+    fromString x = Optional (fromString x) Nothing (Just . Just)
 
-pattern OptNamed :: Name -> Opt value
-pattern OptNamed x <- Opt x _ _
-{-# COMPLETE OptNamed #-}
+pattern OptionalNamed :: Name -> Optional value
+pattern OptionalNamed x <- Optional x _ _
+{-# COMPLETE OptionalNamed #-}
 
 ---
 
@@ -186,7 +186,7 @@ data Product a
   where
     UseNoVars :: a -> Product a
     UseOneVar :: Var a -> Product a
-    UseOneOpt :: Opt a -> Product a
+    UseOneOpt :: Optional a -> Product a
     UseManyVars :: Product (a -> b) -> Product a -> Product b
 
 instance IsString (Product Text)
@@ -225,7 +225,7 @@ productNames =
   \case
     UseNoVars _ -> mempty
     UseOneVar (VarNamed x) -> Set.singleton x
-    UseOneOpt (OptNamed x) -> Set.singleton x
+    UseOneOpt (OptionalNamed x) -> Set.singleton x
     UseManyVars a b -> productNames a <> productNames b
 
 ---
@@ -269,34 +269,34 @@ sumNames =
 optional ::
     value -- ^ Default value to return when the variable is absent from the environment.
     -> Var value -- ^ A required environment variable.
-    -> Opt value -- ^ An optional environment variable.
+    -> Optional value -- ^ An optional environment variable.
     --
     -- * Returns the default value when the variable is absent from the environment.
     -- * Succeeds or fails according to the 'Var' parser when the variable is present in the environment.
-optional d (Var x f) = Opt x d f
+optional d (Var x f) = Optional x d f
 
 optionalMaybe ::
     Var value -- ^ A required environment variable.
-    -> Opt (Maybe value) -- ^ An optional environment variable.
+    -> Optional (Maybe value) -- ^ An optional environment variable.
     --
     -- * Returns a 'Nothing' value when the variable is absent from the environment.
     -- * Returns a 'Just' value when the variable is present in the environment.
 optionalMaybe = optionalAlternative
 
-optionalList :: Var a -> Opt [a]
+optionalList :: Var a -> Optional [a]
 optionalList = optionalAlternative
 
-optionalAlternative :: Alternative f => Var a -> Opt (f a)
-optionalAlternative (Var x f) = Opt x empty (fmap pure . f)
+optionalAlternative :: Alternative f => Var a -> Optional (f a)
+optionalAlternative (Var x f) = Optional x empty (fmap pure . f)
 
-isPresent :: Name -> Opt Bool
-isPresent x = Opt x False (const (Just True))
+isPresent :: Name -> Optional Bool
+isPresent x = Optional x False (const (Just True))
 
 ---
 
 {- | Type parameters:
 
-* @var@ - The type of variable you want to read: 'Name', 'Var', 'Opt', or 'Product'.
+* @var@ - The type of variable you want to read: 'Name', 'Var', 'Optional', or 'Product'.
 * @value@ - What type of value is produced when an environment variable is successfully read.
 * @context@ - Normally 'IO', but possibly @('Environment' ->)@ if you are reading from a mock environment. -}
 
@@ -317,9 +317,9 @@ instance Readable (Var value) value
         fmap (`bindValidation` (justOr VarInvalid name . parse)) $
             read name
 
-instance Readable (Opt value) value
+instance Readable (Optional value) value
   where
-    read (Opt name def parse) =
+    read (Optional name def parse) =
         fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
             lookup name
 
@@ -342,7 +342,7 @@ instance Readable (Sum value) [value]
 
 class Factor a v | v -> a where factor :: v -> Product a
 instance Factor a (Var a) where factor = UseOneVar
-instance Factor a (Opt a) where factor = UseOneOpt
+instance Factor a (Optional a) where factor = UseOneOpt
 instance Factor Text Name where factor = factor . text
 
 class Addend a v | v -> a where addend :: v -> Sum a

@@ -4,7 +4,7 @@
 
 module Demo.Output where
 
-import qualified Env (Var, Opt, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, pattern OptNamed, Item (Item), productNames, sumNames)
+import qualified Env (Var, Optional, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, pattern OptionalNamed, Item (Item), productNames, sumNames)
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read)
 import Env.Ops ((*), (+))
 
@@ -64,9 +64,9 @@ instance Show a => DemoVar (Env.Var a) a
   where
     showDemoVar (Env.VarNamed x) = showDemoVar x
 
-instance Show a => DemoVar (Env.Opt a) a
+instance Show a => DemoVar (Env.Optional a) a
   where
-    showDemoVar (Env.OptNamed x) = showDemoVar x
+    showDemoVar (Env.OptionalNamed x) = showDemoVar x
 
 instance Show a => DemoVar (Env.Product a) a
   where

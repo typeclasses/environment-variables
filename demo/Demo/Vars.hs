@@ -22,7 +22,7 @@ apiCredentials = pure (,) * apiKey * apiSecret
 home :: Name
 home = name "HOME"
 
-homeIsPresent :: Opt Bool
+homeIsPresent :: Optional Bool
 homeIsPresent = isPresent home
 
 homeAndVerbosity :: Product (Text, Integer)
