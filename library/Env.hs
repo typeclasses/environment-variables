@@ -20,7 +20,7 @@ module Env
   (
     -- * Defining vars
     -- ** Basics
-    var, Var,
+    var, Required,
     -- ** Optional
     optional, optionalMaybe, Optional, isPresent,
     -- ** Multiple
@@ -39,7 +39,7 @@ module Env
     -- * Environment
     Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
-    varName, pattern VarNamed, pattern OptionalNamed, productNames, sumNames,
+    varName, pattern RequiredNamed, pattern OptionalNamed, productNames, sumNames,
     -- * Re-exports
     Text
   ) where
@@ -98,28 +98,28 @@ pattern NameString s <- ((\(NameText t) -> Text.unpack t) -> s)
 ---
 
 -- | A single required environment variable.
-data Var value = Var Name (Text -> Maybe value)
+data Required value = Required Name (Text -> Maybe value)
     deriving stock Functor
 
-instance IsString (Var Text)
+instance IsString (Required Text)
   where
-    fromString x = Var (fromString x) Just
+    fromString x = Required (fromString x) Just
 
 var ::
     Name -- ^ The name of the environment variable to read.
     -> (Text -> Maybe value) -- ^ How to parse the text into a value.
-    -> Var value
-var = Var
+    -> Required value
+var = Required
 
-text :: Name -> Var Text
+text :: Name -> Required Text
 text x = var x Just
 
-varName :: Var a -> Name
-varName (Var x _) = x
+varName :: Required a -> Name
+varName (Required x _) = x
 
-pattern VarNamed :: Name -> Var value
-pattern VarNamed x <- Var x _
-{-# COMPLETE VarNamed #-}
+pattern RequiredNamed :: Name -> Required value
+pattern RequiredNamed x <- Required x _
+{-# COMPLETE RequiredNamed #-}
 
 -- | A single optional environment variable.
 data Optional value =
@@ -185,7 +185,7 @@ instance Context ((->) Environment)
 data Product a
   where
     UseNoVars :: a -> Product a
-    UseOneVar :: Var a -> Product a
+    UseOneVar :: Required a -> Product a
     UseOneOpt :: Optional a -> Product a
     UseManyVars :: Product (a -> b) -> Product a -> Product b
 
@@ -224,7 +224,7 @@ productNames :: Product a -> Set Name
 productNames =
   \case
     UseNoVars _ -> mempty
-    UseOneVar (VarNamed x) -> Set.singleton x
+    UseOneVar (RequiredNamed x) -> Set.singleton x
     UseOneOpt (OptionalNamed x) -> Set.singleton x
     UseManyVars a b -> productNames a <> productNames b
 
@@ -233,7 +233,7 @@ productNames =
 data Sum a
   where
     ConsiderNoVars :: Sum a
-    ConsiderOneVar :: Var a -> Sum a
+    ConsiderOneVar :: Required a -> Sum a
     ConsiderManyVars :: Sum a -> Sum a -> Sum a
 
 instance IsString (Sum Text)
@@ -261,33 +261,33 @@ sumNames :: Sum a -> Set Name
 sumNames =
   \case
     ConsiderNoVars -> mempty
-    ConsiderOneVar (VarNamed x) -> Set.singleton x
+    ConsiderOneVar (RequiredNamed x) -> Set.singleton x
     ConsiderManyVars a b -> sumNames a <> sumNames b
 
 ---
 
 optional ::
     value -- ^ Default value to return when the variable is absent from the environment.
-    -> Var value -- ^ A required environment variable.
+    -> Required value -- ^ A required environment variable.
     -> Optional value -- ^ An optional environment variable.
     --
     -- * Returns the default value when the variable is absent from the environment.
-    -- * Succeeds or fails according to the 'Var' parser when the variable is present in the environment.
-optional d (Var x f) = Optional x d f
+    -- * Succeeds or fails according to the 'Required' parser when the variable is present in the environment.
+optional d (Required x f) = Optional x d f
 
 optionalMaybe ::
-    Var value -- ^ A required environment variable.
+    Required value -- ^ A required environment variable.
     -> Optional (Maybe value) -- ^ An optional environment variable.
     --
     -- * Returns a 'Nothing' value when the variable is absent from the environment.
     -- * Returns a 'Just' value when the variable is present in the environment.
 optionalMaybe = optionalAlternative
 
-optionalList :: Var a -> Optional [a]
+optionalList :: Required a -> Optional [a]
 optionalList = optionalAlternative
 
-optionalAlternative :: Alternative f => Var a -> Optional (f a)
-optionalAlternative (Var x f) = Optional x empty (fmap pure . f)
+optionalAlternative :: Alternative f => Required a -> Optional (f a)
+optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 
 isPresent :: Name -> Optional Bool
 isPresent x = Optional x False (const (Just True))
@@ -296,7 +296,7 @@ isPresent x = Optional x False (const (Just True))
 
 {- | Type parameters:
 
-* @var@ - The type of variable you want to read: 'Name', 'Var', 'Optional', or 'Product'.
+* @var@ - The type of variable you want to read: 'Name', 'Required', 'Optional', or 'Product'.
 * @value@ - What type of value is produced when an environment variable is successfully read.
 * @context@ - Normally 'IO', but possibly @('Environment' ->)@ if you are reading from a mock environment. -}
 
@@ -311,9 +311,9 @@ instance Readable Name Text
   where
     read name = fmap (justOr VarMissing name) $ lookup name
 
-instance Readable (Var value) value
+instance Readable (Required value) value
   where
-    read (Var name parse) =
+    read (Required name parse) =
         fmap (`bindValidation` (justOr VarInvalid name . parse)) $
             read name
 
@@ -341,12 +341,12 @@ instance Readable (Sum value) [value]
 ---
 
 class Factor a v | v -> a where factor :: v -> Product a
-instance Factor a (Var a) where factor = UseOneVar
+instance Factor a (Required a) where factor = UseOneVar
 instance Factor a (Optional a) where factor = UseOneOpt
 instance Factor Text Name where factor = factor . text
 
 class Addend a v | v -> a where addend :: v -> Sum a
-instance Addend a (Var a) where addend = ConsiderOneVar
+instance Addend a (Required a) where addend = ConsiderOneVar
 instance Addend Text Name where addend = addend . text
 
 ---
@@ -410,7 +410,7 @@ quote x = "‘" <> x <> "’"
 
 ---
 
-integerDecimal :: Name -> Var Integer
+integerDecimal :: Name -> Required Integer
 integerDecimal n = var n $ textRead $ LazyText.signed LazyText.decimal
 
 textRead :: LazyText.Reader a -> Text -> Maybe a

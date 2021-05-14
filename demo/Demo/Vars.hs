@@ -7,7 +7,7 @@ import Env.Ops
 
 import Prelude (Bool, Integer, Either (..), Maybe (..), fmap, pure)
 
-verbosity :: Var Integer
+verbosity :: Required Integer
 verbosity = Env.integerDecimal "VERBOSITY"
 
 apiKey :: Name

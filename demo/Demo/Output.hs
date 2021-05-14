@@ -4,7 +4,7 @@
 
 module Demo.Output where
 
-import qualified Env (Var, Optional, integerDecimal, Readable, Name, pattern NameText, pattern VarNamed, pattern OptionalNamed, Item (Item), productNames, sumNames)
+import qualified Env (Required, Optional, integerDecimal, Readable, Name, pattern NameText, pattern RequiredNamed, pattern OptionalNamed, Item (Item), productNames, sumNames)
 import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, var, name, item, envs, read)
 import Env.Ops ((*), (+))
 
@@ -60,9 +60,9 @@ instance DemoVar Env.Name Text
   where
     showDemoVar (Env.NameText x) = TextBuilder.fromText x
 
-instance Show a => DemoVar (Env.Var a) a
+instance Show a => DemoVar (Env.Required a) a
   where
-    showDemoVar (Env.VarNamed x) = showDemoVar x
+    showDemoVar (Env.RequiredNamed x) = showDemoVar x
 
 instance Show a => DemoVar (Env.Optional a) a
   where
