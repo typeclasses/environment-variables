@@ -326,6 +326,12 @@ instance Readable (Optional value) value
         fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
             lookup name
 
+instance Readable (Var value) value
+  where
+    read = \case
+      Var name Nothing parse -> read (Required name parse)
+      Var name (Just def) parse -> read (Optional name def parse)
+
 instance Readable (Product value) value
   where
     read = \case
