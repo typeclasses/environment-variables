@@ -108,10 +108,6 @@ text x = Required x Just
 varName :: Required a -> Name
 varName (Required x _) = x
 
-pattern RequiredNamed :: Name -> Required value
-pattern RequiredNamed x <- Required x _
-{-# COMPLETE RequiredNamed #-}
-
 ---
 
 -- | A single optional environment variable.
@@ -249,7 +245,7 @@ sumNames :: Sum a -> Set Name
 sumNames =
   \case
     ConsiderNoVars -> mempty
-    ConsiderOneVar (RequiredNamed x) -> Set.singleton x
+    ConsiderOneVar (name -> x) -> Set.singleton x
     ConsiderManyVars a b -> sumNames a <> sumNames b
 
 ---
