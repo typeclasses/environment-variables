@@ -16,11 +16,13 @@
 
 module Env
   (
+    -- * Var names
+    Name, pattern NameText, pattern NameString,
     -- * Defining vars
     -- ** Basics
-    parse, Required,
+    parse, Parser, Required,
     -- ** Optional
-    optional, optionalMaybe, Optional, isPresent,
+    optional, Default, optionalMaybe, Optional, isPresent,
     -- ** Multiple
     Product,
     Sum,
@@ -28,8 +30,6 @@ module Env
     Addend (..), IsProduct (..), IsVar (..), HasNameSet (..),
     -- * Using vars
     Readable (..), Context (..),
-    -- * Var names
-    Name, pattern NameText, pattern NameString,
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Environment
@@ -70,31 +70,71 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified System.Environment as Sys
 
--- | A single required environment variable.
-data Required value = Required Name (Text -> Maybe value)
-    deriving stock Functor
 
--- | A single optional environment variable.
-data Optional value =
-    Optional
-      Name -- ^ The name of the environment variable to read.
-      value -- ^ A value to use instead of applying the parser if the name is not present in the environment.
-      (Text -> Maybe value) -- ^ How to parse the text into a value.
-    deriving stock Functor
+---  🌟 Types for reading environment variables 🌟  ---
 
-data Var value =
-    Var
-      Name -- ^ The name of the environment variable to read.
-      (Maybe value) -- ^ A value to use instead of applying the parser if the name is not present in the environment.
-      (Text -> Maybe value) -- ^ How to parse the text into a value.
-  deriving stock Functor
+-- | How to parse the text of an environment variable into some perhaps more meaningful value
+type Parser a = Text -> Maybe a
+
+-- | Value to use instead of applying the parser if the name is not present in the environment
+type Default a = a
+
+-- | A single required environment variable
+data Required value = Required Name (Parser value)
+
+-- | A single optional environment variable
+data Optional value = Optional Name (Default value) (Parser value)
+
+data Var value = Var Name (Maybe (Default value)) (Parser value)
+
+-- | The product of multiplying two or more environment variables
+data Composite value =
+    forall arg. Composite
+        (NontrivialProduct (arg -> value))
+        (NontrivialProduct arg)
+
+-- | The product of multiplying one or more environment variables
+data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
+
+-- | The product of multiplying any number of individual environment variables
+data Product a = UseNoVars a | UseSomeVars (NontrivialProduct a)
+
+data Sum a
+  where
+    ConsiderNoVars :: Sum a
+    ConsiderOneVar :: Required a -> Sum a
+    ConsiderManyVars :: Sum a -> Sum a -> Sum a
+
+
+---  🌟 Functor instances for environment variable types 🌟  ---
+
+deriving stock instance Functor Composite
+deriving stock instance Functor NontrivialProduct
+deriving stock instance Functor Optional
+deriving stock instance Functor Product
+deriving stock instance Functor Required
+deriving stock instance Functor Sum
+deriving stock instance Functor Var
+
+
+---  🌟 Types for representing environments 🌟  ---
+
+newtype Environment
+  where
+    EnvironmentMap :: Map Name Text -> Environment
+    deriving stock (Eq, Ord, Show, Data)
+    deriving newtype (Semigroup, Monoid)
+
+data Item
+  where
+    Item :: Name -> Text -> Item
+    deriving stock (Eq, Ord, Show, Data, Generic)
+    deriving anyclass (Hashable)
+
 
 ---
 
-parse ::
-    Name -- ^ The name of the environment variable to read.
-    -> (Text -> Maybe value) -- ^ How to parse the text into a value.
-    -> Required value
+parse :: Name -> Parser value -> Required value
 parse = Required
 
 text :: Name -> Required Text
@@ -104,14 +144,6 @@ varName :: Required a -> Name
 varName (Required x _) = x
 
 ---
-
-newtype Environment = EnvironmentMap (Map Name Text)
-    deriving stock (Eq, Ord, Show, Data)
-    deriving newtype (Semigroup, Monoid)
-
-data Item = Item Name Text
-    deriving stock (Eq, Ord, Show, Data, Generic)
-    deriving anyclass (Hashable)
 
 item :: Name -> Text -> Item
 item = Item
@@ -146,52 +178,18 @@ instance Context ((->) Environment)
 
 ---
 
-{- | The product of multiplying two or more environment variables. -}
-
-data Composite a = forall x. Composite (NontrivialProduct (x -> a)) (NontrivialProduct x)
-
-deriving stock instance Functor Composite
-
----
-
-{- | The product of multiplying one or more environment variables. -}
-
-data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
-
-deriving stock instance Functor NontrivialProduct
-
----
-
-{- | The product of multiplying any number of individual environment variables. -}
-
-data Product a = UseNoVars a | UseSomeVars (NontrivialProduct a)
-
-deriving stock instance Functor Product
+multiply :: forall a b. Product (a -> b) -> Product a -> Product b
+UseNoVars   f `multiply` UseNoVars   x = UseNoVars (f x)
+UseSomeVars f `multiply` UseSomeVars x = UseSomeVars (UseManyVars (Composite f x))
+UseSomeVars f `multiply` UseNoVars   x = UseSomeVars (fmap ($ x) f)
+UseNoVars   f `multiply` UseSomeVars x = UseSomeVars (fmap f x)
 
 instance Applicative Product
   where
     pure = UseNoVars
-
-    (<*>) :: forall a b. Product (a -> b) -> Product a -> Product b
-    UseNoVars f <*> UseNoVars x = UseNoVars (f x)
-    UseSomeVars f <*> UseSomeVars x = UseSomeVars (UseManyVars (Composite f x))
-    UseSomeVars f <*> UseNoVars x = UseSomeVars (fmap ($ x) f)
-    UseNoVars f <*> UseSomeVars x = UseSomeVars (fmap f x)
+    (<*>) = multiply
 
 ---
-
-data Sum a
-  where
-    ConsiderNoVars :: Sum a
-    ConsiderOneVar :: Required a -> Sum a
-    ConsiderManyVars :: Sum a -> Sum a -> Sum a
-
-instance Functor Sum
-  where
-    fmap f = \case
-      ConsiderNoVars -> ConsiderNoVars
-      ConsiderOneVar x -> ConsiderOneVar (fmap f x)
-      ConsiderManyVars x1 x2 -> ConsiderManyVars (fmap f x1) (fmap f x2)
 
 instance Semigroup (Sum a)
   where
