@@ -89,27 +89,27 @@ data Var value = Var Name (Maybe (Default value)) (Parser value)
 
 -- | The product of multiplying two or more environment variables
 data Composite value =
-    forall arg. Composite
-        (NontrivialProduct (arg -> value))
-        (NontrivialProduct arg)
+    forall arg. Composite (NontrivialProduct (arg -> value)) (NontrivialProduct arg)
 
 -- | The product of multiplying one or more environment variables
-data NontrivialProduct a = UseOneVar (Var a) | UseManyVars (Composite a)
+data NontrivialProduct value = UseOneVar (Var value) | UseManyVars (Composite value)
 
 -- | The product of multiplying any number of individual environment variables
-data Product a = UseNoVars a | UseSomeVars (NontrivialProduct a)
+data Product value = UseNoVars value | UseSomeVars (NontrivialProduct value)
 
-data Sum a
-  where
-    ConsiderNoVars :: Sum a
-    ConsiderOneVar :: Required a -> Sum a
-    ConsiderManyVars :: Sum a -> Sum a -> Sum a
+data Choice value = Choice (NontrivialSum value) (NontrivialSum value)
+
+data NontrivialSum value = ConsiderOneVar (Required value) | ConsiderManyVars (Choice value)
+
+data Sum value = ConsiderNoVars | ConsiderSomeVars (NontrivialSum value)
 
 
 ---  🌟 Functor instances for environment variable types 🌟  ---
 
+deriving stock instance Functor Choice
 deriving stock instance Functor Composite
 deriving stock instance Functor NontrivialProduct
+deriving stock instance Functor NontrivialSum
 deriving stock instance Functor Optional
 deriving stock instance Functor Product
 deriving stock instance Functor Required
@@ -191,11 +191,19 @@ instance Applicative Product
 
 ---
 
+instance Semigroup (Choice a)
+  where
+    x <> y = Choice (ConsiderManyVars x) (ConsiderManyVars y)
+
+instance Semigroup (NontrivialSum a)
+  where
+    x <> y = ConsiderManyVars (Choice x y)
+
 instance Semigroup (Sum a)
   where
     ConsiderNoVars <> x = x
     x <> ConsiderNoVars = x
-    x <> y = ConsiderManyVars x y
+    ConsiderSomeVars x <> ConsiderSomeVars y = ConsiderSomeVars (x <> y)
 
 instance Monoid (Sum a)
   where
@@ -203,21 +211,12 @@ instance Monoid (Sum a)
 
 ---
 
-optional ::
-    value -- ^ Default value to return when the variable is absent from the environment.
-    -> Required value -- ^ A required environment variable.
-    -> Optional value -- ^ An optional environment variable.
-    --
-    -- * Returns the default value when the variable is absent from the environment.
-    -- * Succeeds or fails according to the 'Required' parser when the variable is present in the environment.
+-- | Returns the default value when the variable is absent from the environment. Succeeds or fails according to the 'Required' parser when the variable is present in the environment.
+optional :: Default value -> Required value -> Optional value
 optional d (Required x f) = Optional x d f
 
-optionalMaybe ::
-    Required value -- ^ A required environment variable.
-    -> Optional (Maybe value) -- ^ An optional environment variable.
-    --
-    -- * Returns a 'Nothing' value when the variable is absent from the environment.
-    -- * Returns a 'Just' value when the variable is present in the environment.
+-- | Returns a 'Nothing' value when the variable is absent from the environment. Returns a 'Just' value when the variable is present in the environment.
+optionalMaybe :: Required value -> Optional (Maybe value)
 optionalMaybe = optionalAlternative
 
 optionalList :: Required a -> Optional [a]
@@ -282,19 +281,28 @@ instance Readable (Product value) value
       UseNoVars x -> pure (Success x)
       UseSomeVars x -> read x
 
+instance Readable (Choice value) [value]
+  where
+    read (Choice x y) = pure (liftA2 (++)) <*> read x <*> read y
+
+instance Readable (NontrivialSum value) [value]
+  where
+    read = \case
+      ConsiderOneVar x -> read (optionalList x)
+      ConsiderManyVars x -> read x
+
 instance Readable (Sum value) [value]
   where
     read = \case
       ConsiderNoVars -> pure (Success [])
-      ConsiderOneVar v -> read (optionalList v)
-      ConsiderManyVars x y -> pure (liftA2 (++)) <*> read x <*> read y
+      ConsiderSomeVars x -> read x
 
 ---
 
 class Addend a v | v -> a where
     addend :: v -> Sum a
 instance Addend a (Required a) where
-    addend = ConsiderOneVar
+    addend = ConsiderSomeVars . ConsiderOneVar
 instance Addend Text Name where
     addend = addend . text
 
@@ -323,9 +331,15 @@ instance IsVar a (Optional a) where
 
 class HasNameSet a where
     nameSet :: a -> Set Name
+instance HasNameSet () where
+    nameSet _ = Set.empty
 instance HasNameSet (Name) where
     nameSet = Set.singleton
 instance HasNameSet (Var a) where
+    nameSet = nameSet . name
+instance HasNameSet (Required a) where
+    nameSet = nameSet . name
+instance HasNameSet (Optional a) where
     nameSet = nameSet . name
 instance HasNameSet (Composite a) where
     nameSet (Composite f x) = nameSet f <> nameSet x
@@ -335,10 +349,15 @@ instance HasNameSet (NontrivialProduct a) where
         UseManyVars x -> nameSet x
 instance HasNameSet (Product a) where
     nameSet = \case
-        UseNoVars _ -> Set.empty
+        UseNoVars _ -> nameSet ()
         UseSomeVars x -> nameSet x
+instance HasNameSet (Choice a) where
+    nameSet (Choice x y) = nameSet x <> nameSet y
+instance HasNameSet (NontrivialSum a) where
+    nameSet = \case
+        ConsiderOneVar x -> nameSet x
+        ConsiderManyVars x -> nameSet x
 instance HasNameSet (Sum a) where
     nameSet = \case
-        ConsiderNoVars -> mempty
-        ConsiderOneVar (name -> x) -> nameSet x
-        ConsiderManyVars a b -> nameSet a <> nameSet b
+        ConsiderNoVars -> nameSet ()
+        ConsiderSomeVars x -> nameSet x
