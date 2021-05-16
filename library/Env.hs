@@ -47,6 +47,7 @@ import Control.Applicative (Alternative (..), Applicative (..))
 import Data.Bool (Bool (True, False))
 import Data.Data (Data)
 import Data.Eq (Eq)
+import Data.Foldable (foldMap)
 import Data.Function ((.), ($), const)
 import Data.Functor (Functor (..), fmap)
 import Data.Hashable (Hashable)
@@ -281,21 +282,40 @@ instance Readable (Product value) value
       UseNoVars x -> pure (Success x)
       UseSomeVars x -> read x
 
-instance Readable (Choice value) [value]
-  where
-    read (Choice x y) = pure (liftA2 (++)) <*> read x <*> read y
+---
 
-instance Readable (NontrivialSum value) [value]
+class Possibilities var value | var -> value
   where
-    read = \case
+    possibilities :: Context context => var -> context (Validation EnvFailure [value])
+
+instance Possibilities (Choice value) value
+  where
+    possibilities (Choice x y) = pure (liftA2 (++)) <*> possibilities x <*> possibilities y
+
+instance Possibilities (NontrivialSum value) value
+  where
+    possibilities = \case
       ConsiderOneVar x -> read (optionalList x)
-      ConsiderManyVars x -> read x
+      ConsiderManyVars x -> possibilities x
 
-instance Readable (Sum value) [value]
+instance Possibilities (Sum value) value
   where
-    read = \case
+    possibilities = \case
       ConsiderNoVars -> pure (Success [])
-      ConsiderSomeVars x -> read x
+      ConsiderSomeVars x -> possibilities x
+
+instance Readable (Choice        value) value where read = firstPossibility
+instance Readable (NontrivialSum value) value where read = firstPossibility
+instance Readable (Sum           value) value where read = firstPossibility
+
+firstPossibility :: forall context var value. (Context context, Possibilities var value, HasNameSet var) => var -> context (Validation EnvFailure value)
+firstPossibility v = fmap f (possibilities v)
+  where
+    f :: Validation EnvFailure [value] -> Validation EnvFailure value
+    f = \case
+      Failure e -> Failure e
+      Success [] -> Failure ((foldMap (oneProblemFailure VarMissing) (Set.toList (nameSet v))))
+      Success (x : _) -> Success x
 
 ---
 

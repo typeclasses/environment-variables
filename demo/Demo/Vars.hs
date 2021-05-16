@@ -32,6 +32,9 @@ homeAndVerbosity = pure (,) * home * verbosity
 homeOrVerbosity :: Sum (Either Text Integer)
 homeOrVerbosity = fmap Left (parse home Just) + fmap Right verbosity
 
+verbosityOrHome :: Sum (Either Text Integer)
+verbosityOrHome = fmap Right verbosity + fmap Left (parse home Just)
+
 user :: Name
 user = NameText "USER"
 

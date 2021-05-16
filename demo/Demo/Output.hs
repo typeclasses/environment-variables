@@ -72,7 +72,7 @@ instance Show a => DemoVar (Env.Product a) a
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-instance Show a => DemoVar (Env.Sum a) [a]
+instance Show a => DemoVar (Env.Sum a) a
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
@@ -97,6 +97,7 @@ demoVars =
     , V apiCredentials
     , V homeAndVerbosity
     , V homeOrVerbosity
+    , V verbosityOrHome
     , V homeOrUser
     , V homeIsPresent
     , V locale
