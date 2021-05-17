@@ -17,12 +17,12 @@
 module Env
   (
     -- * Var names
-    Name, pattern NameText, pattern NameString, NameWithDefault (..),
+    Name, pattern NameText, pattern NameString, NameWithDefault,
     -- * Defining vars
     -- ** Basics
     parse, Parser, Required,
     -- ** Optional
-    optional, Default, optionalMaybe, Optional, isPresent,
+    Optionalize (..), Default, optionalMaybe, Optional, isPresent,
     -- ** Multiple
     Product,
     Sum,
@@ -219,9 +219,23 @@ instance Monoid (Sum a)
 
 ---
 
--- | Returns the default value when the variable is absent from the environment. Succeeds or fails according to the 'Required' parser when the variable is present in the environment.
-optional :: Default value -> Required value -> Optional value
-optional d (Required x f) = Optional x d f
+class Optionalize required optional value
+    | optional -> value
+    , required -> optional
+    , optional -> required
+  where
+    -- | Turns a required environment variable reader into one that returns the default value when the variable is absent from the environment
+    optional :: Default value -> required -> optional
+
+instance Optionalize Name NameWithDefault Text
+  where
+    optional def name = NameWithDefault name def
+
+instance Optionalize (Required value) (Optional value) value
+  where
+    optional def (Required name parser) = Optional name def parser
+
+---
 
 -- | Returns a 'Nothing' value when the variable is absent from the environment. Returns a 'Just' value when the variable is present in the environment.
 optionalMaybe :: Required value -> Optional (Maybe value)
@@ -369,8 +383,10 @@ class HasNameSet a where
     nameSet :: a -> Set Name
 instance HasNameSet () where
     nameSet _ = Set.empty
-instance HasNameSet (Name) where
+instance HasNameSet Name where
     nameSet = Set.singleton
+instance HasNameSet NameWithDefault where
+    nameSet (NameWithDefault x _) = nameSet x
 instance HasNameSet (Var a) where
     nameSet = nameSet . name
 instance HasNameSet (Required a) where
