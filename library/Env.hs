@@ -22,7 +22,7 @@ module Env
     -- ** Basics
     parse, Parser, Required,
     -- ** Optional
-    Optionalize (..), Default, optionalMaybe, Optional, isPresent,
+    Optionalize (..), Default, optionalMaybe, Optional,
     -- ** Multiple
     Product,
     Sum,
@@ -44,11 +44,10 @@ import Env.Name
 import Env.Problems
 
 import Control.Applicative (Alternative (..), Applicative (..))
-import Data.Bool (Bool (True, False))
 import Data.Data (Data)
 import Data.Eq (Eq)
 import Data.Foldable (foldMap)
-import Data.Function ((.), ($), const)
+import Data.Function ((.), ($))
 import Data.Functor (Functor (..), fmap)
 import Data.Hashable (Hashable)
 import Data.Map (Map)
@@ -243,9 +242,6 @@ optionalMaybe = optionalAlternative
 
 optionalAlternative :: Alternative f => Required a -> Optional (f a)
 optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
-
-isPresent :: Name -> Optional Bool
-isPresent x = Optional x False (const (Just True))
 
 ---
 
