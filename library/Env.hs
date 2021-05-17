@@ -284,7 +284,8 @@ instance Readable (Product value) value
 
 ---
 
-class Possibilities var value | var -> value
+-- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
+class Readable var value => Possibilities var value
   where
     possibilities :: Context context => var -> context (Validation EnvFailure [value])
 
