@@ -101,4 +101,5 @@ demoVars =
     , V homeOrUser
     , V homeIsPresent
     , V locale
+    , V userAndApiCredentials
     ]

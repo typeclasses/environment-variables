@@ -20,6 +20,9 @@ apiSecret = NameText "API_SECRET"
 apiCredentials :: Product (Text, Text)
 apiCredentials = pure (,) * apiKey * apiSecret
 
+userAndApiCredentials :: Product (Text, Text, Text)
+userAndApiCredentials = pure (,,) * user * apiKey * apiSecret
+
 home :: Name
 home = NameText "HOME"
 
