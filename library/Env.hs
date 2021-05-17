@@ -51,7 +51,6 @@ import Data.Foldable (foldMap)
 import Data.Function ((.), ($), const)
 import Data.Functor (Functor (..), fmap)
 import Data.Hashable (Hashable)
-import Data.List ((++))
 import Data.Map (Map)
 import Data.Maybe (Maybe (..), maybe)
 import Data.Monoid (Monoid (mempty))
@@ -220,9 +219,6 @@ optional d (Required x f) = Optional x d f
 optionalMaybe :: Required value -> Optional (Maybe value)
 optionalMaybe = optionalAlternative
 
-optionalList :: Required a -> Optional [a]
-optionalList = optionalAlternative
-
 optionalAlternative :: Alternative f => Required a -> Optional (f a)
 optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 
@@ -287,22 +283,22 @@ instance Readable (Product value) value
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
 class Readable var value => Possibilities var value
   where
-    possibilities :: Context context => var -> context (Validation EnvFailure [value])
+    possibilities :: (Context context, Alternative possibilities) => var -> context (Validation EnvFailure (possibilities value))
 
 instance Possibilities (Choice value) value
   where
-    possibilities (Choice x y) = pure (liftA2 (++)) <*> possibilities x <*> possibilities y
+    possibilities (Choice x y) = pure (liftA2 (<|>)) <*> possibilities x <*> possibilities y
 
 instance Possibilities (NontrivialSum value) value
   where
     possibilities = \case
-      ConsiderOneVar x -> read (optionalList x)
+      ConsiderOneVar x -> read (optionalAlternative x)
       ConsiderManyVars x -> possibilities x
 
 instance Possibilities (Sum value) value
   where
     possibilities = \case
-      ConsiderNoVars -> pure (Success [])
+      ConsiderNoVars -> pure (Success empty)
       ConsiderSomeVars x -> possibilities x
 
 instance Readable (Choice        value) value where read = firstPossibility
