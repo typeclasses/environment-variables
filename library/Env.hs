@@ -305,7 +305,9 @@ instance Readable (Choice        value) value where read = firstPossibility
 instance Readable (NontrivialSum value) value where read = firstPossibility
 instance Readable (Sum           value) value where read = firstPossibility
 
-firstPossibility :: forall context var value. (Context context, Possibilities var value, HasNameSet var) => var -> context (Validation EnvFailure value)
+firstPossibility :: forall context var value.
+    (Context context, Possibilities var value, HasNameSet var) =>
+    var -> context (Validation EnvFailure value)
 firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
   where
     requireJust :: Maybe value -> Validation EnvFailure value
