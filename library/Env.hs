@@ -99,13 +99,16 @@ data Composite value =
 -- | The product of multiplying one or more environment variables
 data NontrivialProduct value = UseOneVar (Var value) | UseManyVars (Composite value)
 
--- | The product of multiplying any number of individual environment variables
+-- | The product of multiplying any number of environment variables
 data Product value = UseNoVars value | UseSomeVars (NontrivialProduct value)
 
+-- | The sum of adding two or more environment variables
 data Choice value = Choice (NontrivialSum value) (NontrivialSum value)
 
+-- | The sum of adding one or more environment variables
 data NontrivialSum value = ConsiderOneVar (Required value) | ConsiderManyVars (Choice value)
 
+-- | The sum of adding any number of environment variables
 data Sum value = ConsiderNoVars | ConsiderSomeVars (NontrivialSum value)
 
 
