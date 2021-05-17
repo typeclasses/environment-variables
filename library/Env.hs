@@ -235,7 +235,9 @@ isPresent x = Optional x False (const (Just True))
 
 class Readable var value | var -> value
   where
-    read :: Context context => var -> context (Validation EnvFailure value)
+    read :: forall context.
+        Context context =>
+        var -> context (Validation EnvFailure value)
 
 justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
@@ -283,7 +285,9 @@ instance Readable (Product value) value
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
 class Readable var value => Possibilities var value
   where
-    possibilities :: (Context context, Alternative possibilities) => var -> context (Validation EnvFailure (possibilities value))
+    possibilities :: forall context possibilities.
+        (Context context, Alternative possibilities) =>
+        var -> context (Validation EnvFailure (possibilities value))
 
 instance Possibilities (Choice value) value
   where
