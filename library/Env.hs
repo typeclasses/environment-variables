@@ -17,7 +17,7 @@
 module Env
   (
     -- * Var names
-    Name, pattern NameText, pattern NameString,
+    Name, pattern NameText, pattern NameString, NameWithDefault (..),
     -- * Defining vars
     -- ** Basics
     parse, Parser, Required,
@@ -65,6 +65,7 @@ import System.IO (IO)
 import Text.Show (Show)
 
 import qualified Data.List as List
+import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -79,12 +80,16 @@ type Parser a = Text -> Maybe a
 -- | Value to use instead of applying the parser if the name is not present in the environment
 type Default a = a
 
+-- | A text environment variable, with a default value if not present
+data NameWithDefault = NameWithDefault Name (Default Text)
+
 -- | A single required environment variable
 data Required value = Required Name (Parser value)
 
 -- | A single optional environment variable
 data Optional value = Optional Name (Default value) (Parser value)
 
+-- | A single environment variable
 data Var value = Var Name (Maybe (Default value)) (Parser value)
 
 -- | The product of multiplying two or more environment variables
@@ -245,6 +250,12 @@ justOr x name = maybe (Failure (oneProblemFailure x name)) Success
 instance Readable Name Text
   where
     read name = fmap (justOr VarMissing name) $ lookup name
+
+instance Readable NameWithDefault Text
+  where
+    read (NameWithDefault name def) =
+        fmap (Success . Maybe.fromMaybe def) $
+            lookup name
 
 instance Readable (Required value) value
   where
