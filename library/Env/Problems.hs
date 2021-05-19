@@ -7,7 +7,11 @@
     OverloadedStrings, PatternSynonyms, ViewPatterns
 #-}
 
-module Env.Problems where
+module Env.Problems
+  (
+    EnvFailure,  pattern EnvFailureList,
+    Problem (..), oneProblemFailure, OneEnvFailure (..)
+  ) where
 
 import Env.Name
 
