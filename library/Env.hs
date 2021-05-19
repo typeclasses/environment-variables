@@ -33,7 +33,12 @@ module Env
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
     -- * Re-exports
-    Text
+    -- ** Text
+    -- $text
+    Text,
+    -- ** Validation
+    -- $validation
+    Validation (..), validation, bindValidation
   ) where
 
 import Env.Environment
@@ -49,7 +54,7 @@ import Data.Monoid (Monoid (mempty))
 import Data.Semigroup (Semigroup, (<>))
 import Data.Set (Set)
 import Data.Text (Text)
-import Data.Validation (Validation (Success, Failure), bindValidation)
+import Data.Validation (Validation (Success, Failure), bindValidation, validation)
 import System.IO (IO)
 
 import qualified Data.Maybe as Maybe
@@ -360,3 +365,9 @@ instance HasNameSet (Sum a) where
     nameSet = \case
         ConsiderNoVars -> nameSet ()
         ConsiderSomeVars x -> nameSet x
+
+-- $text
+-- See "Data.Text"
+
+-- $validation
+-- See "Data.Validation"
