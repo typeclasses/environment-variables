@@ -10,7 +10,7 @@
 module Env.Problems
   (
     EnvFailure,  pattern EnvFailureList,
-    Problem (..), oneProblemFailure, OneEnvFailure (..)
+    Problem (..), oneProblemFailure, OneFailure (..)
   ) where
 
 import Env.Name
@@ -40,32 +40,32 @@ data Problem = VarMissing | VarInvalid
     deriving stock (Eq, Ord, Show, Enum, Bounded, Data, Generic)
     deriving anyclass (Hashable)
 
-data OneEnvFailure = OneEnvFailure Name Problem
+data OneFailure = OneFailure Name Problem
     deriving stock (Eq, Ord, Show)
 
 newtype EnvFailure = EnvFailure { envFailureMap :: Map Name Problem }
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
-instance Exception OneEnvFailure
+instance Exception OneFailure
   where
-    displayException (OneEnvFailure x y) = LazyText.unpack $ TextBuilder.toLazyText $ oneFailureMessage y x
+    displayException (OneFailure x y) = LazyText.unpack $ TextBuilder.toLazyText $ oneFailureMessage y x
 
 instance Exception EnvFailure
   where
     displayException = LazyText.unpack . TextBuilder.toLazyText . envFailureMessage
 
-pattern EnvFailureList :: [OneEnvFailure] -> EnvFailure
+pattern EnvFailureList :: [OneFailure] -> EnvFailure
 pattern EnvFailureList xs <- (envFailureToList -> xs)
   where
     EnvFailureList = listToEnvFailure
 {-# COMPLETE EnvFailureList #-}
 
-envFailureToList :: EnvFailure -> [OneEnvFailure]
-envFailureToList = List.map (\(n, p) -> OneEnvFailure n p) . Map.toList . envFailureMap
+envFailureToList :: EnvFailure -> [OneFailure]
+envFailureToList = List.map (\(n, p) -> OneFailure n p) . Map.toList . envFailureMap
 
-listToEnvFailure :: [OneEnvFailure] -> EnvFailure
-listToEnvFailure = EnvFailure . Map.fromList . List.map (\(OneEnvFailure n p) -> (n, p))
+listToEnvFailure :: [OneFailure] -> EnvFailure
+listToEnvFailure = EnvFailure . Map.fromList . List.map (\(OneFailure n p) -> (n, p))
 
 envFailureMessage :: EnvFailure -> TextBuilder.Builder
 envFailureMessage =
@@ -76,7 +76,7 @@ envFailureMessage =
      x -> f x
        where
          f = unwords . List.map message . envFailureToList
-         message (OneEnvFailure n p) = oneFailureMessage p n
+         message (OneFailure n p) = oneFailureMessage p n
          unwords = fold . List.intersperse (TextBuilder.fromString " ")
 
 oneFailureMessage :: Problem -> Name -> TextBuilder.Builder
