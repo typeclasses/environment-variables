@@ -95,6 +95,7 @@ demoVars :: [V]
 demoVars =
     [ V apiKey
     , V verbosity
+    , V verbosityWithDefault
     , V apiCredentials
     , V homeAndVerbosity
     , V homeOrVerbosity

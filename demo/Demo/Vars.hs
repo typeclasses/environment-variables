@@ -11,6 +11,9 @@ import Prelude (Bool, Integer, Either (..), Maybe (..), fmap, pure)
 verbosity :: Required Integer
 verbosity = integerDecimal "VERBOSITY"
 
+verbosityWithDefault :: Optional Integer
+verbosityWithDefault = optional 1 verbosity
+
 apiKey :: Name
 apiKey = NameText "API_KEY"
 
