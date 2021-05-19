@@ -85,8 +85,7 @@ data Optional value = Optional Name (Default value) (Parser value)
 data Var value = Var Name (Maybe (Default value)) (Parser value)
 
 -- | The product of multiplying two or more environment variables
-data Composite value =
-    forall arg. Composite (NontrivialProduct (arg -> value)) (NontrivialProduct arg)
+data Composite value = forall arg. Composite (NontrivialProduct (arg -> value)) (NontrivialProduct arg)
 
 -- | The product of multiplying one or more environment variables
 data NontrivialProduct value = UseOneVar (Var value) | UseManyVars (Composite value)
