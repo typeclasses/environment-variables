@@ -32,38 +32,28 @@ module Env
     Readable (..), Context (..),
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
-    -- * Environment
-    Environment, pattern EnvironmentList, Item (..), envs, item, getEnvironment,
     -- * Miscellanious accessors
     varName,
     -- * Re-exports
     Text
   ) where
 
+import Env.Environment
 import Env.Name
 import Env.Problems
 
 import Control.Applicative (Alternative (..), Applicative (..))
-import Data.Data (Data)
-import Data.Eq (Eq)
 import Data.Foldable (foldMap)
 import Data.Function ((.), ($))
 import Data.Functor (Functor (..), fmap)
-import Data.Hashable (Hashable)
-import Data.Map (Map)
 import Data.Maybe (Maybe (..), maybe)
 import Data.Monoid (Monoid (mempty))
-import Data.Ord (Ord)
 import Data.Semigroup (Semigroup, (<>))
 import Data.Set (Set)
-import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Validation (Validation (Success, Failure), bindValidation)
-import GHC.Generics (Generic)
 import System.IO (IO)
-import Text.Show (Show)
 
-import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
@@ -124,21 +114,6 @@ deriving stock instance Functor Sum
 deriving stock instance Functor Var
 
 
----  🌟 Types for representing environments 🌟  ---
-
-newtype Environment
-  where
-    EnvironmentMap :: Map Name Text -> Environment
-    deriving stock (Eq, Ord, Show, Data)
-    deriving newtype (Semigroup, Monoid)
-
-data Item
-  where
-    Item :: Name -> Text -> Item
-    deriving stock (Eq, Ord, Show, Data, Generic)
-    deriving anyclass (Hashable)
-
-
 ---
 
 parse :: Name -> Parser value -> Required value
@@ -149,25 +124,6 @@ text x = Required x Just
 
 varName :: Required a -> Name
 varName (Required x _) = x
-
----
-
-item :: Name -> Text -> Item
-item = Item
-
-pattern EnvironmentList :: [Item] -> Environment
-pattern EnvironmentList xs <- (\(EnvironmentMap m) -> List.map (\(n, v) -> Item n v) (Map.toList m) -> xs)
-  where
-    EnvironmentList = EnvironmentMap . Map.fromList . List.map (\(Item n v) -> (n, v))
-{-# COMPLETE EnvironmentList #-}
-
-envs :: [Item] -> Environment
-envs = EnvironmentList
-
-{- | Reads the process's entire environment at once. -}
-
-getEnvironment :: IO Environment
-getEnvironment = fmap (EnvironmentList . List.map (\(n, v) -> Item (fromString n) (fromString v))) Sys.getEnvironment
 
 ---
 

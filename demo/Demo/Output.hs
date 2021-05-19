@@ -4,8 +4,9 @@
 
 module Demo.Output where
 
-import qualified Env (Required, Optional, Readable, Name, pattern NameText, Item (Item), nameSet, name)
-import Env (Environment, pattern EnvironmentList, EnvFailure, Product, Sum, read)
+import qualified Env (Required, Optional, Readable, Name, pattern NameText, nameSet, name)
+import Env (EnvFailure, Product, Sum, read)
+import Env.Environment (Environment, pattern EnvironmentList, Item (Item))
 import Env.Ops ((*), (+))
 
 import Demo.Environments
@@ -42,7 +43,7 @@ demoOutput = TextBuilder.toLazyText $ fold $ List.map (<> "\n") lines
 oneEnvOutput :: DemoEnv -> [TextBuilder.Builder]
 oneEnvOutput DemoEnv{ demoEnvName, demoEnvDescription, demoEnvironment = EnvironmentList items } =
     ("\"" <> TextBuilder.fromText demoEnvName <> "\" - " <> TextBuilder.fromText demoEnvDescription)
-    : List.map (\(Env.Item (Env.NameText x) y) -> TextBuilder.fromText x <> " = \"" <> TextBuilder.fromText y <> "\"") items
+    : List.map (\(Item (Env.NameText x) y) -> TextBuilder.fromText x <> " = \"" <> TextBuilder.fromText y <> "\"") items
 
 oneDemoOutput :: Demo -> TextBuilder.Builder
 oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar } =
