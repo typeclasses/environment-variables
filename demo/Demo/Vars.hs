@@ -6,13 +6,14 @@ import Env
 import Env.Ops
 import Env.Sundries
 
+import Data.Function ((&))
 import Prelude (Bool, Integer, Either (..), Maybe (..), fmap, pure)
 
 verbosity :: Required Integer
-verbosity = integerDecimal "VERBOSITY"
+verbosity = "VERBOSITY" & parse integerDecimal
 
 verbosityWithDefault :: Optional Integer
-verbosityWithDefault = optional 1 verbosity
+verbosityWithDefault = verbosity & optional 1
 
 apiKey :: Name
 apiKey = NameText "API_KEY"
@@ -36,10 +37,10 @@ homeAndVerbosity :: Product (Text, Integer)
 homeAndVerbosity = pure (,) * home * verbosity
 
 homeOrVerbosity :: Sum (Either Text Integer)
-homeOrVerbosity = fmap Left (parse home Just) + fmap Right verbosity
+homeOrVerbosity = fmap Left (text home) + fmap Right verbosity
 
 verbosityOrHome :: Sum (Either Text Integer)
-verbosityOrHome = fmap Right verbosity + fmap Left (parse home Just)
+verbosityOrHome = fmap Right verbosity + fmap Left (text home)
 
 user :: Name
 user = NameText "USER"

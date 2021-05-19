@@ -20,7 +20,7 @@ module Env
     Name, pattern NameText, pattern NameString, NameWithDefault,
     -- * Defining vars
     -- ** Basics
-    parse, Parser, Required,
+    text, parse, Parser, Required,
     -- ** Optional
     Optionalize (..), Default, optionalMaybe, Optional,
     -- ** Multiple
@@ -118,11 +118,11 @@ deriving stock instance Functor Var
 
 ---
 
-parse :: Name -> Parser value -> Required value
-parse = Required
-
 text :: Name -> Required Text
 text x = Required x Just
+
+parse :: Parser value -> Name -> Required value
+parse parser name = Required name parser
 
 ---
 
