@@ -32,8 +32,6 @@ module Env
     Readable (..), Context (..),
     -- * What can go wrong
     EnvFailure, pattern EnvFailureList, OneEnvFailure (..), Problem (..),
-    -- * Miscellanious accessors
-    varName,
     -- * Re-exports
     Text
   ) where
@@ -121,9 +119,6 @@ parse = Required
 
 text :: Name -> Required Text
 text x = Required x Just
-
-varName :: Required a -> Name
-varName (Required x _) = x
 
 ---
 
