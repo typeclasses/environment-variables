@@ -9,7 +9,7 @@
 
 module Env.Problems
   (
-    EnvFailure,  pattern EnvFailureList,
+    ProductFailure,  pattern ProductFailureList,
     Problem (..), oneProblemFailure, OneFailure (..)
   ) where
 
@@ -43,7 +43,7 @@ data Problem = VarMissing | VarInvalid
 data OneFailure = OneFailure Name Problem
     deriving stock (Eq, Ord, Show)
 
-newtype EnvFailure = EnvFailure { envFailureMap :: Map Name Problem }
+newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem }
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
@@ -51,39 +51,39 @@ instance Exception OneFailure
   where
     displayException (OneFailure x y) = LazyText.unpack $ TextBuilder.toLazyText $ oneFailureMessage y x
 
-instance Exception EnvFailure
+instance Exception ProductFailure
   where
     displayException = LazyText.unpack . TextBuilder.toLazyText . envFailureMessage
 
-pattern EnvFailureList :: [OneFailure] -> EnvFailure
-pattern EnvFailureList xs <- (envFailureToList -> xs)
+pattern ProductFailureList :: [OneFailure] -> ProductFailure
+pattern ProductFailureList xs <- (productFailureToList -> xs)
   where
-    EnvFailureList = listToEnvFailure
-{-# COMPLETE EnvFailureList #-}
+    ProductFailureList = listToProductFailure
+{-# COMPLETE ProductFailureList #-}
 
-envFailureToList :: EnvFailure -> [OneFailure]
-envFailureToList = List.map (\(n, p) -> OneFailure n p) . Map.toList . envFailureMap
+productFailureToList :: ProductFailure -> [OneFailure]
+productFailureToList = List.map (\(n, p) -> OneFailure n p) . Map.toList . productFailureMap
 
-listToEnvFailure :: [OneFailure] -> EnvFailure
-listToEnvFailure = EnvFailure . Map.fromList . List.map (\(OneFailure n p) -> (n, p))
+listToProductFailure :: [OneFailure] -> ProductFailure
+listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure n p) -> (n, p))
 
-envFailureMessage :: EnvFailure -> TextBuilder.Builder
+envFailureMessage :: ProductFailure -> TextBuilder.Builder
 envFailureMessage =
   \case
-     EnvFailure xs | Map.null xs -> "No problem."
-     EnvFailure xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
+     ProductFailure xs | Map.null xs -> "No problem."
+     ProductFailure xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
         "Missing environment variables: " <> nameListAnd (Map.keys xs) <> "."
      x -> f x
        where
-         f = unwords . List.map message . envFailureToList
+         f = unwords . List.map message . productFailureToList
          message (OneFailure n p) = oneFailureMessage p n
          unwords = fold . List.intersperse (TextBuilder.fromString " ")
 
 oneFailureMessage :: Problem -> Name -> TextBuilder.Builder
 oneFailureMessage = \case VarMissing -> missingMessage; VarInvalid -> invalidMessage
 
-oneProblemFailure :: Problem -> Name -> EnvFailure
-oneProblemFailure p x = EnvFailure (Map.singleton x p)
+oneProblemFailure :: Problem -> Name -> ProductFailure
+oneProblemFailure p x = ProductFailure (Map.singleton x p)
 
 -- | Error message to report that a single environment variable is missing.
 missingMessage :: Name -> TextBuilder.Builder

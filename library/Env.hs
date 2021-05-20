@@ -31,7 +31,7 @@ module Env
     -- * Using vars
     Readable (..), Context (..),
     -- * What can go wrong
-    EnvFailure, pattern EnvFailureList, OneFailure (..), Problem (..),
+    ProductFailure, pattern ProductFailureList, OneFailure (..), Problem (..),
     -- * Re-exports
     -- ** Text
     -- $text
@@ -210,9 +210,9 @@ class Readable var value | var -> value
   where
     read :: forall context.
         Context context =>
-        var -> context (Validation EnvFailure value)
+        var -> context (Validation ProductFailure value)
 
-justOr :: Problem -> Name -> Maybe a -> Validation EnvFailure a
+justOr :: Problem -> Name -> Maybe a -> Validation ProductFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
 
 instance Readable Name Text
@@ -266,7 +266,7 @@ class Readable var value => Possibilities var value
   where
     possibilities :: forall context possibilities.
         (Context context, Alternative possibilities) =>
-        var -> context (Validation EnvFailure (possibilities value))
+        var -> context (Validation ProductFailure (possibilities value))
 
 instance Possibilities (Choice value) value
   where
@@ -290,10 +290,10 @@ instance Readable (Sum           value) value where read = firstPossibility
 
 firstPossibility :: forall context var value.
     (Context context, Possibilities var value, HasNameSet var) =>
-    var -> context (Validation EnvFailure value)
+    var -> context (Validation ProductFailure value)
 firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
   where
-    requireJust :: Maybe value -> Validation EnvFailure value
+    requireJust :: Maybe value -> Validation ProductFailure value
     requireJust = maybe (Failure error) Success
 
     error = foldMap (oneProblemFailure VarMissing) (Set.toList (nameSet v))

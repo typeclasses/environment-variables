@@ -4,8 +4,7 @@
 
 module Demo.Output where
 
-import qualified Env (Required, Optional, Readable, Name, pattern NameText, nameSet, name)
-import Env (EnvFailure, Product, Sum, read)
+import qualified Env
 import Env.Environment (Environment, pattern EnvironmentList, Item (Item))
 import Env.Ops ((*), (+))
 
