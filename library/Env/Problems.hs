@@ -35,14 +35,16 @@ import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
 import qualified Data.Map.Strict as Map
 
--- | Things that can go wrong with a single environment variable.
+-- | Things that can go wrong with a single environment variable
 data Problem = VarMissing | VarInvalid
     deriving stock (Eq, Ord, Show, Enum, Bounded, Data, Generic)
     deriving anyclass (Hashable)
 
+-- | The name of a single problematic environment variable, and what is wrong with it
 data OneFailure = OneFailure Name Problem
     deriving stock (Eq, Ord, Show)
 
+-- | Some number of environment variables that all have problems
 newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem }
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
