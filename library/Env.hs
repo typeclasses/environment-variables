@@ -206,7 +206,7 @@ optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 * @value@ - What type of value is produced when an environment variable is successfully read.
 * @context@ - Normally 'IO', but possibly @('Environment' ->)@ if you are reading from a mock environment. -}
 
-class Readable var value | var -> value
+class Readable value var | var -> value
   where
     read :: forall context.
         Context context =>
@@ -215,45 +215,45 @@ class Readable var value | var -> value
 justOr :: Problem -> Name -> Maybe a -> Validation ProductFailure a
 justOr x name = maybe (Failure (oneProblemFailure x name)) Success
 
-instance Readable Name Text
+instance Readable Text Name
   where
     read name = fmap (justOr VarMissing name) $ lookup name
 
-instance Readable NameWithDefault Text
+instance Readable Text NameWithDefault
   where
     read (NameWithDefault name def) =
         fmap (Success . Maybe.fromMaybe def) $
             lookup name
 
-instance Readable (Required value) value
+instance Readable value (Required value)
   where
     read (Required name parse) =
         fmap (`bindValidation` (justOr VarInvalid name . parse)) $
             read name
 
-instance Readable (Optional value) value
+instance Readable value (Optional value)
   where
     read (Optional name def parse) =
         fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
             lookup name
 
-instance Readable (Var value) value
+instance Readable value (Var value)
   where
     read = \case
       Var name Nothing parse -> read (Required name parse)
       Var name (Just def) parse -> read (Optional name def parse)
 
-instance Readable (NontrivialProduct value) value
+instance Readable value (NontrivialProduct value)
   where
     read = \case
       UseOneVar v -> read v
       UseManyVars v -> read v
 
-instance Readable (Composite value) value
+instance Readable value (Composite value)
   where
     read (Composite mf v) = pure (<*>) <*> read mf <*> read v
 
-instance Readable (Product value) value
+instance Readable value (Product value)
   where
     read = \case
       UseNoVars x -> pure (Success x)
@@ -262,34 +262,34 @@ instance Readable (Product value) value
 ---
 
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
-class Readable var value => Possibilities var value
+class Readable value var => Possibilities value var
   where
     possibilities :: forall context possibilities.
         (Context context, Alternative possibilities) =>
         var -> context (Validation ProductFailure (possibilities value))
 
-instance Possibilities (Choice value) value
+instance Possibilities value (Choice value)
   where
     possibilities (Choice x y) = pure (liftA2 (<|>)) <*> possibilities x <*> possibilities y
 
-instance Possibilities (NontrivialSum value) value
+instance Possibilities value (NontrivialSum value)
   where
     possibilities = \case
       ConsiderOneVar x -> read (optionalAlternative x)
       ConsiderManyVars x -> possibilities x
 
-instance Possibilities (Sum value) value
+instance Possibilities value (Sum value)
   where
     possibilities = \case
       ConsiderNoVars -> pure (Success empty)
       ConsiderSomeVars x -> possibilities x
 
-instance Readable (Choice        value) value where read = firstPossibility
-instance Readable (NontrivialSum value) value where read = firstPossibility
-instance Readable (Sum           value) value where read = firstPossibility
+instance Readable value (Choice        value) where read = firstPossibility
+instance Readable value (NontrivialSum value) where read = firstPossibility
+instance Readable value (Sum           value) where read = firstPossibility
 
-firstPossibility :: forall context var value.
-    (Context context, Possibilities var value, HasNameSet var) =>
+firstPossibility :: forall context value var.
+    (Context context, Possibilities value var, HasNameSet var) =>
     var -> context (Validation ProductFailure value)
 firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
   where

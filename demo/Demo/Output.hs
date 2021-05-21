@@ -49,31 +49,31 @@ oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar }
     "read " <> showDemoVar demoVar <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
     validation Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
 
-class (Env.Readable v a, Show a) => DemoVar v a | v -> a
+class (Env.Readable a v, Show a) => DemoVar a v | v -> a
   where
     showDemoVar :: v -> TextBuilder.Builder
 
-instance DemoVar Env.Name Text
+instance DemoVar Text Env.Name
   where
     showDemoVar (Env.NameText x) = TextBuilder.fromText x
 
-instance Show a => DemoVar (Env.Required a) a
+instance Show a => DemoVar a (Env.Required a)
   where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar (Env.Optional a) a
+instance Show a => DemoVar a (Env.Optional a)
   where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar (Env.Product a) a
+instance Show a => DemoVar a (Env.Product a)
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-instance Show a => DemoVar (Env.Sum a) a
+instance Show a => DemoVar a (Env.Sum a)
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-data Demo = forall v a. (DemoVar v a) => Demo{ demoEnv :: DemoEnv, demoVar :: v }
+data Demo = forall v a. (DemoVar a v) => Demo{ demoEnv :: DemoEnv, demoVar :: v }
 
 demos :: [Demo]
 demos =
@@ -85,7 +85,7 @@ demos =
 demoEnvs :: [DemoEnv]
 demoEnvs = [ base, app, problem ]
 
-data V = forall v a. DemoVar v a => V v
+data V = forall v a. DemoVar a v => V v
 
 demoVars :: [V]
 demoVars =
