@@ -31,7 +31,7 @@ module Env
     -- * Using vars
     Readable (..), Context (..),
     -- * What can go wrong
-    ProductFailure, pattern ProductFailureList, OneFailure (..), Problem (..),
+    ProductFailure, pattern ProductFailureList, OneFailure (..), Problem (..), HasErrorMessage (..),
     -- * Re-exports
     -- ** Text
     -- $text

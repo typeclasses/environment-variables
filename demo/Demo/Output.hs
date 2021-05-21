@@ -47,10 +47,7 @@ oneEnvOutput DemoEnv{ demoEnvName, demoEnvDescription, demoEnvironment = Environ
 oneDemoOutput :: Demo -> TextBuilder.Builder
 oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar } =
     "read " <> showDemoVar demoVar <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
-    validation showEx (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
-
-showEx :: Exception e => e -> TextBuilder.Builder
-showEx = TextBuilder.fromString . displayException
+    validation Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
 
 class (Env.Readable v a, Show a) => DemoVar v a | v -> a
   where

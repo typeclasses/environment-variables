@@ -10,22 +10,23 @@
 module Env.Problems
   (
     ProductFailure,  pattern ProductFailureList,
-    Problem (..), oneProblemFailure, OneFailure (..)
+    Problem (..), oneProblemFailure, OneFailure (..),
+    HasErrorMessage (..)
   ) where
 
 import Env.Name
 
-import Control.Exception (Exception (displayException))
 import Data.Data (Data)
 import Data.Eq (Eq, (==))
 import Data.Foldable (fold, all)
-import Data.Function ((.), ($))
+import Data.Function ((.))
 import Data.Hashable (Hashable)
 import Data.Map (Map)
 import Data.Monoid (Monoid)
 import Data.Ord (Ord, (>=))
 import Data.Semigroup (Semigroup, (<>))
 import Data.String (IsString)
+import Data.Text (Text)
 import GHC.Generics (Generic)
 import Prelude (Enum, Bounded, error)
 import Text.Show (Show)
@@ -34,6 +35,9 @@ import qualified Data.List as List
 import qualified Data.Text.Lazy as LazyText
 import qualified Data.Text.Lazy.Builder as TextBuilder
 import qualified Data.Map.Strict as Map
+
+
+---  🌟 Types 🌟  ---
 
 -- | Things that can go wrong with a single environment variable
 data Problem = VarMissing | VarInvalid
@@ -49,13 +53,37 @@ newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem 
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
-instance Exception OneFailure
-  where
-    displayException (OneFailure x y) = LazyText.unpack $ TextBuilder.toLazyText $ oneFailureMessage y x
 
-instance Exception ProductFailure
+---  🌟 Error messages 🌟  ---
+
+class HasErrorMessage a
   where
-    displayException = LazyText.unpack . TextBuilder.toLazyText . envFailureMessage
+    errorMessageBuilder :: a -> TextBuilder.Builder
+
+    errorMessageText :: a -> Text
+    errorMessageText = LazyText.toStrict . TextBuilder.toLazyText . errorMessageBuilder
+
+instance HasErrorMessage OneFailure
+  where
+    errorMessageBuilder (OneFailure x y) =
+        case y of
+            VarMissing -> missingMessage x
+            VarInvalid -> invalidMessage x
+
+instance HasErrorMessage ProductFailure
+  where
+    errorMessageBuilder =
+      \case
+        ProductFailure xs | Map.null xs -> "No problem."
+        ProductFailure xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
+            "Missing environment variables: " <> nameListAnd (Map.keys xs) <> "."
+        x -> f x
+          where
+            f = unwords . List.map errorMessageBuilder . productFailureToList
+            unwords = fold . List.intersperse (TextBuilder.fromString " ")
+
+
+---
 
 pattern ProductFailureList :: [OneFailure] -> ProductFailure
 pattern ProductFailureList xs <- (productFailureToList -> xs)
@@ -68,21 +96,6 @@ productFailureToList = List.map (\(n, p) -> OneFailure n p) . Map.toList . produ
 
 listToProductFailure :: [OneFailure] -> ProductFailure
 listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure n p) -> (n, p))
-
-envFailureMessage :: ProductFailure -> TextBuilder.Builder
-envFailureMessage =
-  \case
-     ProductFailure xs | Map.null xs -> "No problem."
-     ProductFailure xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
-        "Missing environment variables: " <> nameListAnd (Map.keys xs) <> "."
-     x -> f x
-       where
-         f = unwords . List.map message . productFailureToList
-         message (OneFailure n p) = oneFailureMessage p n
-         unwords = fold . List.intersperse (TextBuilder.fromString " ")
-
-oneFailureMessage :: Problem -> Name -> TextBuilder.Builder
-oneFailureMessage = \case VarMissing -> missingMessage; VarInvalid -> invalidMessage
 
 oneProblemFailure :: Problem -> Name -> ProductFailure
 oneProblemFailure p x = ProductFailure (Map.singleton x p)
