@@ -225,8 +225,8 @@ instance Readable value OneFailure (Required value)
   where
     read (Required name parse) = fmap (f . g) $ lookup name
       where
-        f = (`bindValidation` (maybe (Failure $ OneFailure VarInvalid name) Success . parse))
-        g = maybe (Failure $ OneFailure VarMissing name) Success
+        f = (`bindValidation` (maybe (Failure $ fromInvalid $ Invalid name) Success . parse))
+        g = maybe (Failure $ fromMissing $ Missing name) Success
 
 instance Readable value Invalid (Optional value)
   where
@@ -239,10 +239,7 @@ instance Readable value OneFailure (Var value)
   where
     read = \case
       Var name Nothing parse -> read (Required name parse)
-      Var name (Just def) parse -> fmap f $ lookup name
-        where
-          f = maybe (Success def) g
-          g = maybe (Failure $ OneFailure VarInvalid name) Success . parse
+      Var name (Just def) parse -> fmap (bimap fromInvalid id) $ read (Optional name def parse)
 
 instance Readable value ProductFailure (NontrivialProduct value)
   where

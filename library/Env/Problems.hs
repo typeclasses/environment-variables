@@ -10,6 +10,7 @@
 module Env.Problems
   (
     Missing (..), Invalid (..), ToProductFailure (..),
+    FromInvalid (..), FromMissing (..),
     ProductFailure,  pattern ProductFailureList,
     Problem (..), oneProblemFailure, OneFailure (..),
     HasErrorMessage (..)
@@ -58,10 +59,44 @@ newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem 
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
----  🌟 Lifts 🌟  ---
+
+---  🌟 Lifting from Invalid 🌟  ---
+
+class FromInvalid a where
+    fromInvalid :: Invalid -> a
+
+instance FromInvalid Invalid where
+    fromInvalid x = x
+
+instance FromInvalid OneFailure where
+    fromInvalid (Invalid x) = OneFailure VarInvalid x
+
+instance FromInvalid ProductFailure where
+    fromInvalid (Invalid x) = ProductFailure (Map.singleton x VarInvalid)
+
+
+---  🌟 Lifting from Missing 🌟  ---
+
+class FromMissing a where
+    fromMissing :: Missing -> a
+
+instance FromMissing Missing where
+    fromMissing x = x
+
+instance FromMissing OneFailure where
+    fromMissing (Missing x) = OneFailure VarMissing x
+
+instance FromMissing ProductFailure where
+    fromMissing (Missing x) = ProductFailure (Map.singleton x VarMissing)
+
+
+---  🌟 Lifting to ProductFailure 🌟  ---
 
 class ToProductFailure a where
     toProductFailure :: a -> ProductFailure
+
+instance ToProductFailure ProductFailure where
+    toProductFailure x = x
 
 instance ToProductFailure Missing where
     toProductFailure (Missing x) = ProductFailure (Map.singleton x VarMissing)
@@ -71,9 +106,6 @@ instance ToProductFailure Invalid where
 
 instance ToProductFailure OneFailure where
     toProductFailure (OneFailure x f) = ProductFailure (Map.singleton f x)
-
-instance ToProductFailure ProductFailure where
-    toProductFailure x = x
 
 
 ---  🌟 Error messages 🌟  ---
