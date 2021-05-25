@@ -18,13 +18,13 @@ import Demo.Vars
 
 import Control.Applicative (Applicative (..))
 import Control.Exception (Exception (displayException))
+import Data.Either (Either, either)
 import Data.Foldable (fold, toList)
 import Data.Function ((.), ($), const)
 import Data.Functor (Functor (..), fmap, (<$>))
 import Data.Maybe (Maybe (..))
 import Data.Semigroup (Semigroup, (<>))
 import Data.Text (Text)
-import Data.Validation (Validation, validation)
 import Prelude (Integer, show, Show)
 import System.IO (IO)
 
@@ -52,7 +52,7 @@ oneEnvOutput DemoEnv{ demoEnvName, demoEnvDescription, demoEnvironment = Environ
 oneDemoOutput :: Demo -> TextBuilder.Builder
 oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar = V v } =
     "read " <> showDemoVar v <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
-    validation Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read v demoEnvironment)
+    either Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read v demoEnvironment)
 
 class DemoVar var
   where

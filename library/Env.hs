@@ -35,18 +35,20 @@ module Env
     -- * Re-exports
     -- ** Text
     -- $text
-    Text,
-    -- ** Validation
-    -- $validation
-    Validation (..), validation, bindValidation
+    Text
   ) where
 
 import Env.Environment
 import Env.Name
 import Env.Problems
+import Env.Validation
 
-import Control.Applicative (Alternative (..), Applicative (..))
+import Control.Applicative (Alternative (empty, (<|>)))
+import Control.Applicative (Applicative (pure, liftA2))
+import Control.Applicative ((<$>), (<*>))
+import Control.Monad ((>>=))
 import Data.Bifunctor (bimap)
+import Data.Either (Either, either)
 import Data.Function ((.), ($), id)
 import Data.Functor (Functor (..), fmap)
 import Data.Maybe (Maybe (..), fromMaybe, maybe)
@@ -54,7 +56,6 @@ import Data.Monoid (Monoid (mempty))
 import Data.Semigroup (Semigroup, (<>))
 import Data.Set (Set)
 import Data.Text (Text)
-import Data.Validation (Validation (Success, Failure), bindValidation, validation)
 import Data.Void (Void)
 import System.IO (IO)
 
@@ -208,7 +209,7 @@ optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 
 class Readable value error var | var -> value, var -> error where
     read :: forall context. Context context =>
-        var -> context (Validation error value)
+        var -> context (Either error value)
 
 instance Readable Text Missing Name where
     read name = fmap f $ lookup name
@@ -224,7 +225,7 @@ instance Readable value OneFailure (Required value)
   where
     read (Required name parse) = fmap (f . g) $ lookup name
       where
-        f = (`bindValidation` (maybe (Failure $ fromInvalid $ Invalid name) Success . parse))
+        f = (>>= (maybe (Failure $ fromInvalid $ Invalid name) Success . parse))
         g = maybe (Failure $ fromMissing $ Missing name) Success
 
 instance Readable value Invalid (Optional value)
@@ -248,7 +249,7 @@ instance Readable value ProductFailure (NontrivialProduct value)
 
 instance Readable value ProductFailure (Composite value)
   where
-    read (Composite mf v) = pure (<*>) <*> read mf <*> read v
+    read (Composite mf v) = apValidation <$> read mf <*> read v
 
 instance Readable value ProductFailure (Product value)
   where
@@ -282,7 +283,7 @@ instance Possibilities value (Choice value)
 instance Possibilities value (NontrivialSum value)
   where
     possibilities = \case
-      ConsiderOneVar x -> fmap (validation (\e -> (toSumFailure e, empty)) (\a -> (mempty, pure a))) $ read x
+      ConsiderOneVar x -> fmap (either (\e -> (toSumFailure e, empty)) (\a -> (mempty, pure a))) $ read x
       ConsiderManyVars x -> possibilities x
 
 instance Possibilities value (Sum value)
@@ -365,6 +366,3 @@ instance HasNameSet (Sum a) where
 
 -- $text
 -- See "Data.Text"
-
--- $validation
--- See "Data.Validation"
