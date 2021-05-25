@@ -9,11 +9,21 @@
 
 module Env.Problems
   (
-    Missing (..), Invalid (..), ToProductFailure (..),
-    FromInvalid (..), FromMissing (..),
-    ProductFailure,  pattern ProductFailureList,
-    Problem (..), OneFailure (..),
+    -- * Types
+    Problem (..),
+    OneFailure (..),
+    Missing (..),
+    Invalid (..),
+    ProductFailure, pattern ProductFailureList,
+
+    -- * Lifting
+    ToProductFailure (..),
+    FromInvalid (..),
+    FromMissing (..),
+
+    -- * Error messages
     HasErrorMessage (..)
+
   ) where
 
 import Env.Name
