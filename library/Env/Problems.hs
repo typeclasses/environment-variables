@@ -79,16 +79,32 @@ newtype SumFailure = SumFailureMap (Map Name Problem)
 ---  🌟 Pattern synonyms 🌟  ---
 
 pattern ProductFailureList :: [OneFailure] -> ProductFailure
-pattern ProductFailureList xs <- ProductFailureMap (List.map (\(n, p) -> OneFailure p n) . Map.toList -> xs)
-  where
-    ProductFailureList = ProductFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
+pattern ProductFailureList xs <- (failureMapToList -> xs) where
+    ProductFailureList = failureListToMap
 {-# COMPLETE ProductFailureList #-}
 
 pattern SumFailureList :: [OneFailure] -> SumFailure
-pattern SumFailureList xs <- SumFailureMap (List.map (\(n, p) -> OneFailure p n) . Map.toList -> xs)
-  where
-    SumFailureList = SumFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
+pattern SumFailureList xs <- (failureMapToList -> xs) where
+    SumFailureList = failureListToMap
 {-# COMPLETE SumFailureList #-}
+
+class IsFailureMap a where
+    toFailureMap :: a -> Map Name Problem
+    fromFailureMap :: Map Name Problem -> a
+
+instance IsFailureMap ProductFailure where
+    toFailureMap (ProductFailureMap x) = x
+    fromFailureMap x = ProductFailureMap x
+
+instance IsFailureMap SumFailure where
+    toFailureMap (SumFailureMap x) = x
+    fromFailureMap x = SumFailureMap x
+
+failureMapToList :: IsFailureMap a => a -> [OneFailure]
+failureMapToList = List.map (\(n, p) -> OneFailure p n) . Map.toList . toFailureMap
+
+failureListToMap :: IsFailureMap a => [OneFailure] -> a
+failureListToMap = fromFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
 
 
 ---  🌟 Lifting from Invalid 🌟  ---
