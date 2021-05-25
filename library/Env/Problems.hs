@@ -50,7 +50,7 @@ data Problem = VarMissing | VarInvalid
     deriving anyclass (Hashable)
 
 -- | The name of a single problematic environment variable, and what is wrong with it
-data OneFailure = OneFailure Name Problem
+data OneFailure = OneFailure Problem Name
     deriving stock (Eq, Ord, Show)
 
 -- | Some number of environment variables that all have problems
@@ -70,7 +70,7 @@ instance ToProductFailure Invalid where
     toProductFailure (Invalid x) = ProductFailure (Map.singleton x VarInvalid)
 
 instance ToProductFailure OneFailure where
-    toProductFailure (OneFailure x f) = ProductFailure (Map.singleton x f)
+    toProductFailure (OneFailure x f) = ProductFailure (Map.singleton f x)
 
 instance ToProductFailure ProductFailure where
     toProductFailure x = x
@@ -97,7 +97,7 @@ instance HasErrorMessage Invalid
 
 instance HasErrorMessage OneFailure
   where
-    errorMessageBuilder (OneFailure x y) =
+    errorMessageBuilder (OneFailure y x) =
         case y of
             VarMissing -> errorMessageBuilder (Missing x)
             VarInvalid -> errorMessageBuilder (Invalid x)
@@ -124,10 +124,10 @@ pattern ProductFailureList xs <- (productFailureToList -> xs)
 {-# COMPLETE ProductFailureList #-}
 
 productFailureToList :: ProductFailure -> [OneFailure]
-productFailureToList = List.map (\(n, p) -> OneFailure n p) . Map.toList . productFailureMap
+productFailureToList = List.map (\(n, p) -> OneFailure p n) . Map.toList . productFailureMap
 
 listToProductFailure :: [OneFailure] -> ProductFailure
-listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure n p) -> (n, p))
+listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
 
 oneProblemFailure :: Problem -> Name -> ProductFailure
 oneProblemFailure p x = ProductFailure (Map.singleton x p)
