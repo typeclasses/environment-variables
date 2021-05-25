@@ -47,7 +47,6 @@ import Env.Problems
 
 import Control.Applicative (Alternative (..), Applicative (..))
 import Data.Bifunctor (bimap)
-import Data.Foldable (foldMap)
 import Data.Function ((.), ($), id)
 import Data.Functor (Functor (..), fmap)
 import Data.Maybe (Maybe (..), fromMaybe, maybe)
@@ -257,44 +256,45 @@ instance Readable value ProductFailure (Product value)
       UseNoVars x -> pure (Success x)
       UseSomeVars x -> read x
 
+instance Readable value SumFailure (Choice value) where
+    read = firstPossibility
+
+instance Readable value SumFailure (NontrivialSum value) where
+    read = firstPossibility
+
+instance Readable value SumFailure (Sum value) where
+    read = firstPossibility
+
+
 ---
 
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
-class Readable value error var => Possibilities value error var
+class Possibilities value var
   where
     possibilities :: forall context possibilities.
         (Context context, Alternative possibilities) =>
-        var -> context (Validation error (possibilities value))
+        var -> context (SumFailure, possibilities value)
 
-instance Possibilities value ProductFailure (Choice value)
+instance Possibilities value (Choice value)
   where
     possibilities (Choice x y) = pure (liftA2 (<|>)) <*> possibilities x <*> possibilities y
 
-instance Possibilities value ProductFailure (NontrivialSum value)
+instance Possibilities value (NontrivialSum value)
   where
     possibilities = \case
-      ConsiderOneVar x -> fmap (bimap toProductFailure id) $ read (optionalAlternative x)
+      ConsiderOneVar x -> fmap (validation (\e -> (toSumFailure e, empty)) (\a -> (mempty, pure a))) $ read x
       ConsiderManyVars x -> possibilities x
 
-instance Possibilities value ProductFailure (Sum value)
+instance Possibilities value (Sum value)
   where
     possibilities = \case
-      ConsiderNoVars -> pure (Success empty)
+      ConsiderNoVars -> pure (mempty, empty)
       ConsiderSomeVars x -> possibilities x
 
-instance Readable value ProductFailure (Choice        value) where read = firstPossibility
-instance Readable value ProductFailure (NontrivialSum value) where read = firstPossibility
-instance Readable value ProductFailure (Sum           value) where read = firstPossibility
-
-firstPossibility :: forall context value error var.
-    (Context context, Possibilities value error var, HasNameSet var, error ~ ProductFailure) =>
-    var -> context (Validation error value)
-firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
-  where
-    requireJust :: Maybe value -> Validation ProductFailure value
-    requireJust = maybe (Failure error) Success
-
-    error = foldMap (toProductFailure . Missing) (Set.toList (nameSet v))
+firstPossibility :: forall context value var.
+    (Context context, Possibilities value var, HasNameSet var) =>
+    var -> context (Validation SumFailure value)
+firstPossibility v = fmap (\(e, m) -> maybe (Failure e) Success m) (possibilities v)
 
 ---
 

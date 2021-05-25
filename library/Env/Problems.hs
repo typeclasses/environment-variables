@@ -15,9 +15,11 @@ module Env.Problems
     Missing (..),
     Invalid (..),
     ProductFailure, pattern ProductFailureList,
+    SumFailure, pattern SumFailureList,
 
     -- * Lifting
     ToProductFailure (..),
+    ToSumFailure (..),
     FromInvalid (..),
     FromMissing (..),
 
@@ -65,7 +67,11 @@ data OneFailure = OneFailure Problem Name
     deriving stock (Eq, Ord, Show)
 
 -- | Some number of environment variables that all have problems
-newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem }
+newtype ProductFailure = ProductFailureMap { productFailureMap :: Map Name Problem }
+    deriving stock (Eq, Ord, Show)
+    deriving newtype (Semigroup, Monoid)
+
+newtype SumFailure = SumFailureMap { sumFailureMap :: Map Name Problem }
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
@@ -75,8 +81,14 @@ newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem 
 pattern ProductFailureList :: [OneFailure] -> ProductFailure
 pattern ProductFailureList xs <- (List.map (\(n, p) -> OneFailure p n) . Map.toList . productFailureMap -> xs)
   where
-    ProductFailureList = ProductFailure . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
+    ProductFailureList = ProductFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
 {-# COMPLETE ProductFailureList #-}
+
+pattern SumFailureList :: [OneFailure] -> SumFailure
+pattern SumFailureList xs <- (List.map (\(n, p) -> OneFailure p n) . Map.toList . sumFailureMap -> xs)
+  where
+    SumFailureList = SumFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
+{-# COMPLETE SumFailureList #-}
 
 
 ---  🌟 Lifting from Invalid 🌟  ---
@@ -91,7 +103,7 @@ instance FromInvalid OneFailure where
     fromInvalid (Invalid x) = OneFailure VarInvalid x
 
 instance FromInvalid ProductFailure where
-    fromInvalid (Invalid x) = ProductFailure (Map.singleton x VarInvalid)
+    fromInvalid (Invalid x) = ProductFailureMap (Map.singleton x VarInvalid)
 
 
 ---  🌟 Lifting from Missing 🌟  ---
@@ -106,7 +118,7 @@ instance FromMissing OneFailure where
     fromMissing (Missing x) = OneFailure VarMissing x
 
 instance FromMissing ProductFailure where
-    fromMissing (Missing x) = ProductFailure (Map.singleton x VarMissing)
+    fromMissing (Missing x) = ProductFailureMap (Map.singleton x VarMissing)
 
 
 ---  🌟 Lifting to ProductFailure 🌟  ---
@@ -118,13 +130,31 @@ instance ToProductFailure ProductFailure where
     toProductFailure x = x
 
 instance ToProductFailure Missing where
-    toProductFailure (Missing x) = ProductFailure (Map.singleton x VarMissing)
+    toProductFailure (Missing x) = ProductFailureMap (Map.singleton x VarMissing)
 
 instance ToProductFailure Invalid where
-    toProductFailure (Invalid x) = ProductFailure (Map.singleton x VarInvalid)
+    toProductFailure (Invalid x) = ProductFailureMap (Map.singleton x VarInvalid)
 
 instance ToProductFailure OneFailure where
-    toProductFailure (OneFailure x f) = ProductFailure (Map.singleton f x)
+    toProductFailure (OneFailure x f) = ProductFailureMap (Map.singleton f x)
+
+
+---  🌟 Lifting to SumFailure 🌟  ---
+
+class ToSumFailure a where
+    toSumFailure :: a -> SumFailure
+
+instance ToSumFailure SumFailure where
+    toSumFailure x = x
+
+instance ToSumFailure Missing where
+    toSumFailure (Missing x) = SumFailureMap (Map.singleton x VarMissing)
+
+instance ToSumFailure Invalid where
+    toSumFailure (Invalid x) = SumFailureMap (Map.singleton x VarInvalid)
+
+instance ToSumFailure OneFailure where
+    toSumFailure (OneFailure x f) = SumFailureMap (Map.singleton f x)
 
 
 ---  🌟 Error messages 🌟  ---
@@ -157,12 +187,34 @@ instance HasErrorMessage ProductFailure
   where
     errorMessageBuilder =
       \case
-        ProductFailure xs | Map.null xs -> "No problem."
-        ProductFailure xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
+        ProductFailureList [] -> "No problem."
+        ProductFailureList [x] -> errorMessageBuilder x
+        ProductFailureMap xs | Map.size xs >= 2, all (== VarMissing) (Map.elems xs) ->
             "Missing environment variables: " <> nameListAnd (Map.keys xs) <> "."
-        x -> f x
+        ProductFailureList xs -> unwords (List.map errorMessageBuilder xs)
           where
-            f (ProductFailureList xs) = unwords (List.map errorMessageBuilder xs)
+            unwords = fold . List.intersperse (TextBuilder.fromString " ")
+
+instance HasErrorMessage SumFailure
+  where
+    errorMessageBuilder =
+      \case
+        SumFailureList [] -> "No environment variables were considered."
+        SumFailureList [x] -> errorMessageBuilder x
+        SumFailureMap xs | Map.size xs == 2, all (== VarMissing) (Map.elems xs) ->
+            "An environment variable named either" ! nameListOr (Map.keys xs) ! "is required."
+        SumFailureMap xs | all (== VarMissing) (Map.elems xs) -> "Missing a required environment variable named either " <> nameListOr (Map.keys xs) <> "."
+        SumFailureMap xs | Map.size xs == 2 -> ("An environment variable named either" ! nameListOr (Map.keys xs) ! "is required. ") <> unwords (List.map f (Map.toList xs))
+          where
+            f (NameText x, VarInvalid) = quote (TextBuilder.fromText x) ! "is invalid."
+            f (NameText x, VarMissing) = quote (TextBuilder.fromText x) ! "is missing."
+            unwords :: [TextBuilder.Builder] -> TextBuilder.Builder
+            unwords = fold . List.intersperse (TextBuilder.fromString " ")
+        SumFailureMap xs -> "One of the following environment variables is required: " <> nameListOr (Map.keys xs) <> ". " <> unwords (List.map f (Map.toList xs))
+          where
+            f (NameText x, VarInvalid) = quote (TextBuilder.fromText x) ! "is invalid."
+            f (NameText x, VarMissing) = quote (TextBuilder.fromText x) ! "is missing."
+            unwords :: [TextBuilder.Builder] -> TextBuilder.Builder
             unwords = fold . List.intersperse (TextBuilder.fromString " ")
 
 nameListAnd :: [Name] -> TextBuilder.Builder
@@ -181,6 +233,25 @@ nameListAnd =
         f [_] = error "nameListAnd: f: list with one item"
         f [NameText x, NameText y] =
               quote (TextBuilder.fromText x) <> ", and " <>
+              quote (TextBuilder.fromText y)
+        f (NameText x : xs) = quote (TextBuilder.fromText x) <> ", " <> f xs
+
+nameListOr :: [Name] -> TextBuilder.Builder
+nameListOr =
+  \case
+    [] ->
+        "Nothing"
+    [NameText x] ->
+        TextBuilder.fromText x
+    [NameText x, NameText y] ->
+        quote (TextBuilder.fromText x) ! "or" !
+        quote (TextBuilder.fromText y)
+    names -> f names
+      where
+        f [] = error "nameListOr: f: empty list"
+        f [_] = error "nameListOr: f: list with one item"
+        f [NameText x, NameText y] =
+              quote (TextBuilder.fromText x) <> ", or " <>
               quote (TextBuilder.fromText y)
         f (NameText x : xs) = quote (TextBuilder.fromText x) <> ", " <> f xs
 
