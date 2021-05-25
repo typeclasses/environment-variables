@@ -294,7 +294,7 @@ firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
     requireJust :: Maybe value -> Validation ProductFailure value
     requireJust = maybe (Failure error) Success
 
-    error = foldMap (oneProblemFailure VarMissing) (Set.toList (nameSet v))
+    error = foldMap (toProductFailure . Missing) (Set.toList (nameSet v))
 
 ---
 

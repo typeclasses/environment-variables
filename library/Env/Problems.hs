@@ -12,7 +12,7 @@ module Env.Problems
     Missing (..), Invalid (..), ToProductFailure (..),
     FromInvalid (..), FromMissing (..),
     ProductFailure,  pattern ProductFailureList,
-    Problem (..), oneProblemFailure, OneFailure (..),
+    Problem (..), OneFailure (..),
     HasErrorMessage (..)
   ) where
 
@@ -58,6 +58,15 @@ data OneFailure = OneFailure Problem Name
 newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem }
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
+
+
+---  🌟 Pattern synonyms 🌟  ---
+
+pattern ProductFailureList :: [OneFailure] -> ProductFailure
+pattern ProductFailureList xs <- (List.map (\(n, p) -> OneFailure p n) . Map.toList . productFailureMap -> xs)
+  where
+    ProductFailureList = ProductFailure . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
+{-# COMPLETE ProductFailureList #-}
 
 
 ---  🌟 Lifting from Invalid 🌟  ---
@@ -143,26 +152,8 @@ instance HasErrorMessage ProductFailure
             "Missing environment variables: " <> nameListAnd (Map.keys xs) <> "."
         x -> f x
           where
-            f = unwords . List.map errorMessageBuilder . productFailureToList
+            f (ProductFailureList xs) = unwords (List.map errorMessageBuilder xs)
             unwords = fold . List.intersperse (TextBuilder.fromString " ")
-
-
----
-
-pattern ProductFailureList :: [OneFailure] -> ProductFailure
-pattern ProductFailureList xs <- (productFailureToList -> xs)
-  where
-    ProductFailureList = listToProductFailure
-{-# COMPLETE ProductFailureList #-}
-
-productFailureToList :: ProductFailure -> [OneFailure]
-productFailureToList = List.map (\(n, p) -> OneFailure p n) . Map.toList . productFailureMap
-
-listToProductFailure :: [OneFailure] -> ProductFailure
-listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
-
-oneProblemFailure :: Problem -> Name -> ProductFailure
-oneProblemFailure p x = ProductFailure (Map.singleton x p)
 
 nameListAnd :: [Name] -> TextBuilder.Builder
 nameListAnd =
