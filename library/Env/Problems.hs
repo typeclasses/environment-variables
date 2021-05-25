@@ -9,6 +9,7 @@
 
 module Env.Problems
   (
+    Missing (..), Invalid (..), ToProductFailure (..),
     ProductFailure,  pattern ProductFailureList,
     Problem (..), oneProblemFailure, OneFailure (..),
     HasErrorMessage (..)
@@ -39,6 +40,10 @@ import qualified Data.Map.Strict as Map
 
 ---  🌟 Types 🌟  ---
 
+data Missing = Missing Name
+
+data Invalid = Invalid Name
+
 -- | Things that can go wrong with a single environment variable
 data Problem = VarMissing | VarInvalid
     deriving stock (Eq, Ord, Show, Enum, Bounded, Data, Generic)
@@ -53,6 +58,23 @@ newtype ProductFailure = ProductFailure { productFailureMap :: Map Name Problem 
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
+---  🌟 Lifts 🌟  ---
+
+class ToProductFailure a where
+    toProductFailure :: a -> ProductFailure
+
+instance ToProductFailure Missing where
+    toProductFailure (Missing x) = ProductFailure (Map.singleton x VarMissing)
+
+instance ToProductFailure Invalid where
+    toProductFailure (Invalid x) = ProductFailure (Map.singleton x VarInvalid)
+
+instance ToProductFailure OneFailure where
+    toProductFailure (OneFailure x f) = ProductFailure (Map.singleton x f)
+
+instance ToProductFailure ProductFailure where
+    toProductFailure x = x
+
 
 ---  🌟 Error messages 🌟  ---
 
@@ -63,12 +85,22 @@ class HasErrorMessage a
     errorMessageText :: a -> Text
     errorMessageText = LazyText.toStrict . TextBuilder.toLazyText . errorMessageBuilder
 
+instance HasErrorMessage Missing
+  where
+    errorMessageBuilder (Missing (NameText x)) =
+        "Environment variable" ! quote (TextBuilder.fromText x) ! "is missing."
+
+instance HasErrorMessage Invalid
+  where
+    errorMessageBuilder (Invalid (NameText x)) =
+        "Environment variable" ! quote (TextBuilder.fromText x) ! "has an invalid value."
+
 instance HasErrorMessage OneFailure
   where
     errorMessageBuilder (OneFailure x y) =
         case y of
-            VarMissing -> missingMessage x
-            VarInvalid -> invalidMessage x
+            VarMissing -> errorMessageBuilder (Missing x)
+            VarInvalid -> errorMessageBuilder (Invalid x)
 
 instance HasErrorMessage ProductFailure
   where
@@ -99,14 +131,6 @@ listToProductFailure = ProductFailure . Map.fromList . List.map (\(OneFailure n 
 
 oneProblemFailure :: Problem -> Name -> ProductFailure
 oneProblemFailure p x = ProductFailure (Map.singleton x p)
-
--- | Error message to report that a single environment variable is missing.
-missingMessage :: Name -> TextBuilder.Builder
-missingMessage (NameText x) = "Environment variable" ! quote (TextBuilder.fromText x) ! "is missing."
-
--- | Error message to report that a single environment variable is present but invalid.
-invalidMessage :: Name -> TextBuilder.Builder
-invalidMessage (NameText x) = "Environment variable" ! quote (TextBuilder.fromText x) ! "has an invalid value."
 
 nameListAnd :: [Name] -> TextBuilder.Builder
 nameListAnd =

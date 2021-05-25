@@ -1,6 +1,11 @@
 {-# options_ghc -Wall -fno-warn-unused-imports #-}
 
-{-# language FlexibleContexts, FlexibleInstances, FunctionalDependencies, GADTs, NamedFieldPuns, NoImplicitPrelude, OverloadedStrings, RankNTypes, ScopedTypeVariables, PatternSynonyms, ViewPatterns #-}
+{-# language
+    FlexibleContexts, FlexibleInstances,
+    FunctionalDependencies, GADTs, NamedFieldPuns,
+    NoImplicitPrelude, OverloadedStrings, RankNTypes,
+    ScopedTypeVariables, PatternSynonyms, ViewPatterns
+#-}
 
 module Demo.Output where
 
@@ -45,47 +50,47 @@ oneEnvOutput DemoEnv{ demoEnvName, demoEnvDescription, demoEnvironment = Environ
     : List.map (\(Item (Env.NameText x) y) -> TextBuilder.fromText x <> " = \"" <> TextBuilder.fromText y <> "\"") items
 
 oneDemoOutput :: Demo -> TextBuilder.Builder
-oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar } =
-    "read " <> showDemoVar demoVar <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
-    validation Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read demoVar demoEnvironment)
+oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar = V v } =
+    "read " <> showDemoVar v <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
+    validation Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read v demoEnvironment)
 
-class (Env.Readable a v, Show a) => DemoVar a v | v -> a
+class DemoVar var
   where
-    showDemoVar :: v -> TextBuilder.Builder
+    showDemoVar :: var -> TextBuilder.Builder
 
-instance DemoVar Text Env.Name
+instance DemoVar Env.Name
   where
     showDemoVar (Env.NameText x) = TextBuilder.fromText x
 
-instance Show a => DemoVar a (Env.Required a)
+instance Show a => DemoVar (Env.Required a)
   where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar a (Env.Optional a)
+instance Show a => DemoVar (Env.Optional a)
   where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar a (Env.Product a)
+instance Show a => DemoVar (Env.Product a)
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-instance Show a => DemoVar a (Env.Sum a)
+instance Show a => DemoVar (Env.Sum a)
   where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-data Demo = forall v a. (DemoVar a v) => Demo{ demoEnv :: DemoEnv, demoVar :: v }
+data Demo = Demo{ demoEnv :: DemoEnv, demoVar :: V }
 
 demos :: [Demo]
 demos =
   do
-    V v <- demoVars
+    v <- demoVars
     e <- demoEnvs
     [ Demo e v ]
 
 demoEnvs :: [DemoEnv]
 demoEnvs = [ base, app, problem ]
 
-data V = forall v a. DemoVar a v => V v
+data V = forall value error var. (DemoVar var, Env.Readable value error var, Show value, Env.HasErrorMessage error) => V var
 
 demoVars :: [V]
 demoVars =

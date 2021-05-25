@@ -46,18 +46,19 @@ import Env.Name
 import Env.Problems
 
 import Control.Applicative (Alternative (..), Applicative (..))
+import Data.Bifunctor (bimap)
 import Data.Foldable (foldMap)
-import Data.Function ((.), ($))
+import Data.Function ((.), ($), id)
 import Data.Functor (Functor (..), fmap)
-import Data.Maybe (Maybe (..), maybe)
+import Data.Maybe (Maybe (..), fromMaybe, maybe)
 import Data.Monoid (Monoid (mempty))
 import Data.Semigroup (Semigroup, (<>))
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Validation (Validation (Success, Failure), bindValidation, validation)
+import Data.Void (Void)
 import System.IO (IO)
 
-import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -206,54 +207,54 @@ optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 * @value@ - What type of value is produced when an environment variable is successfully read.
 * @context@ - Normally 'IO', but possibly @('Environment' ->)@ if you are reading from a mock environment. -}
 
-class Readable value var | var -> value
+class Readable value error var | var -> value, var -> error where
+    read :: forall context. Context context =>
+        var -> context (Validation error value)
+
+instance Readable Text Missing Name where
+    read name = fmap f $ lookup name
+      where
+        f = maybe (Failure $ Missing name) Success
+
+instance Readable Text Void NameWithDefault where
+    read (NameWithDefault name def) = fmap f $ lookup name
+      where
+        f = Success . fromMaybe def
+
+instance Readable value OneFailure (Required value)
   where
-    read :: forall context.
-        Context context =>
-        var -> context (Validation ProductFailure value)
+    read (Required name parse) = fmap (f . g) $ lookup name
+      where
+        f = (`bindValidation` (maybe (Failure $ OneFailure name VarInvalid) Success . parse))
+        g = maybe (Failure $ OneFailure name VarMissing) Success
 
-justOr :: Problem -> Name -> Maybe a -> Validation ProductFailure a
-justOr x name = maybe (Failure (oneProblemFailure x name)) Success
-
-instance Readable Text Name
+instance Readable value Invalid (Optional value)
   where
-    read name = fmap (justOr VarMissing name) $ lookup name
+    read (Optional name def parse) = fmap f $ lookup name
+      where
+        f = maybe (Success def) g
+        g = maybe (Failure $ Invalid name) Success . parse
 
-instance Readable Text NameWithDefault
-  where
-    read (NameWithDefault name def) =
-        fmap (Success . Maybe.fromMaybe def) $
-            lookup name
-
-instance Readable value (Required value)
-  where
-    read (Required name parse) =
-        fmap (`bindValidation` (justOr VarInvalid name . parse)) $
-            read name
-
-instance Readable value (Optional value)
-  where
-    read (Optional name def parse) =
-        fmap (maybe (Success def) (justOr VarInvalid name . parse)) $
-            lookup name
-
-instance Readable value (Var value)
+instance Readable value OneFailure (Var value)
   where
     read = \case
       Var name Nothing parse -> read (Required name parse)
-      Var name (Just def) parse -> read (Optional name def parse)
+      Var name (Just def) parse -> fmap f $ lookup name
+        where
+          f = maybe (Success def) g
+          g = maybe (Failure $ OneFailure name VarInvalid) Success . parse
 
-instance Readable value (NontrivialProduct value)
+instance Readable value ProductFailure (NontrivialProduct value)
   where
     read = \case
-      UseOneVar v -> read v
+      UseOneVar v -> fmap (bimap toProductFailure id) $ read v
       UseManyVars v -> read v
 
-instance Readable value (Composite value)
+instance Readable value ProductFailure (Composite value)
   where
     read (Composite mf v) = pure (<*>) <*> read mf <*> read v
 
-instance Readable value (Product value)
+instance Readable value ProductFailure (Product value)
   where
     read = \case
       UseNoVars x -> pure (Success x)
@@ -262,35 +263,35 @@ instance Readable value (Product value)
 ---
 
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
-class Readable value var => Possibilities value var
+class Readable value error var => Possibilities value error var
   where
     possibilities :: forall context possibilities.
         (Context context, Alternative possibilities) =>
-        var -> context (Validation ProductFailure (possibilities value))
+        var -> context (Validation error (possibilities value))
 
-instance Possibilities value (Choice value)
+instance Possibilities value ProductFailure (Choice value)
   where
     possibilities (Choice x y) = pure (liftA2 (<|>)) <*> possibilities x <*> possibilities y
 
-instance Possibilities value (NontrivialSum value)
+instance Possibilities value ProductFailure (NontrivialSum value)
   where
     possibilities = \case
-      ConsiderOneVar x -> read (optionalAlternative x)
+      ConsiderOneVar x -> fmap (bimap toProductFailure id) $ read (optionalAlternative x)
       ConsiderManyVars x -> possibilities x
 
-instance Possibilities value (Sum value)
+instance Possibilities value ProductFailure (Sum value)
   where
     possibilities = \case
       ConsiderNoVars -> pure (Success empty)
       ConsiderSomeVars x -> possibilities x
 
-instance Readable value (Choice        value) where read = firstPossibility
-instance Readable value (NontrivialSum value) where read = firstPossibility
-instance Readable value (Sum           value) where read = firstPossibility
+instance Readable value ProductFailure (Choice        value) where read = firstPossibility
+instance Readable value ProductFailure (NontrivialSum value) where read = firstPossibility
+instance Readable value ProductFailure (Sum           value) where read = firstPossibility
 
-firstPossibility :: forall context value var.
-    (Context context, Possibilities value var, HasNameSet var) =>
-    var -> context (Validation ProductFailure value)
+firstPossibility :: forall context value error var.
+    (Context context, Possibilities value error var, HasNameSet var, error ~ ProductFailure) =>
+    var -> context (Validation error value)
 firstPossibility v = fmap (`bindValidation` requireJust) (possibilities v)
   where
     requireJust :: Maybe value -> Validation ProductFailure value
