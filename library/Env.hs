@@ -127,16 +127,13 @@ parse parser name = Required name parser
 
 ---
 
-class Applicative context => Context context
-  where
+class Applicative context => Context context where
     lookup :: Name -> context (Maybe Text)
 
-instance Context IO
-  where
+instance Context IO where
     lookup (NameText x) = fmap (fmap Text.pack) $ Sys.lookupEnv $ Text.unpack x
 
-instance Context ((->) Environment)
-  where
+instance Context ((->) Environment) where
     lookup n (EnvironmentMap m) = Map.lookup n m
 
 ---
@@ -147,29 +144,24 @@ UseSomeVars f `multiply` UseSomeVars x = UseSomeVars (UseManyVars (Composite f x
 UseSomeVars f `multiply` UseNoVars   x = UseSomeVars (fmap ($ x) f)
 UseNoVars   f `multiply` UseSomeVars x = UseSomeVars (fmap f x)
 
-instance Applicative Product
-  where
+instance Applicative Product where
     pure = UseNoVars
     (<*>) = multiply
 
 ---
 
-instance Semigroup (Choice a)
-  where
+instance Semigroup (Choice a) where
     x <> y = Choice (ConsiderManyVars x) (ConsiderManyVars y)
 
-instance Semigroup (NontrivialSum a)
-  where
+instance Semigroup (NontrivialSum a) where
     x <> y = ConsiderManyVars (Choice x y)
 
-instance Semigroup (Sum a)
-  where
+instance Semigroup (Sum a) where
     ConsiderNoVars <> x = x
     x <> ConsiderNoVars = x
     ConsiderSomeVars x <> ConsiderSomeVars y = ConsiderSomeVars (x <> y)
 
-instance Monoid (Sum a)
-  where
+instance Monoid (Sum a) where
     mempty = ConsiderNoVars
 
 ---
@@ -182,12 +174,10 @@ class Optionalize required optional value
     -- | Turns a required environment variable reader into one that returns the default value when the variable is absent from the environment
     optional :: Default value -> required -> optional
 
-instance Optionalize Name NameWithDefault Text
-  where
+instance Optionalize Name NameWithDefault Text where
     optional def name = NameWithDefault name def
 
-instance Optionalize (Required value) (Optional value) value
-  where
+instance Optionalize (Required value) (Optional value) value where
     optional def (Required name parser) = Optional name def parser
 
 ---
@@ -221,38 +211,32 @@ instance Readable Text Void NameWithDefault where
       where
         f = Success . fromMaybe def
 
-instance Readable value OneFailure (Required value)
-  where
+instance Readable value OneFailure (Required value) where
     read (Required name parse) = fmap (f . g) $ lookup name
       where
         f = (>>= (maybe (Failure $ fromInvalid $ Invalid name) Success . parse))
         g = maybe (Failure $ fromMissing $ Missing name) Success
 
-instance Readable value Invalid (Optional value)
-  where
+instance Readable value Invalid (Optional value) where
     read (Optional name def parse) = fmap f $ lookup name
       where
         f = maybe (Success def) g
         g = maybe (Failure $ Invalid name) Success . parse
 
-instance Readable value OneFailure (Var value)
-  where
+instance Readable value OneFailure (Var value) where
     read = \case
       Var name Nothing parse -> read (Required name parse)
       Var name (Just def) parse -> fmap (bimap fromInvalid id) $ read (Optional name def parse)
 
-instance Readable value ProductFailure (NontrivialProduct value)
-  where
+instance Readable value ProductFailure (NontrivialProduct value) where
     read = \case
       UseOneVar v -> fmap (bimap toProductFailure id) $ read v
       UseManyVars v -> read v
 
-instance Readable value ProductFailure (Composite value)
-  where
+instance Readable value ProductFailure (Composite value) where
     read (Composite mf v) = apValidation <$> read mf <*> read v
 
-instance Readable value ProductFailure (Product value)
-  where
+instance Readable value ProductFailure (Product value) where
     read = \case
       UseNoVars x -> pure (Success x)
       UseSomeVars x -> read x
@@ -270,24 +254,20 @@ instance Readable value SumFailure (Sum value) where
 ---
 
 -- | Environment variables that also support enumerating the full set of possibilities that they might have chosen
-class Possibilities value var
-  where
+class Possibilities value var where
     possibilities :: forall context possibilities.
         (Context context, Alternative possibilities) =>
         var -> context (SumFailure, possibilities value)
 
-instance Possibilities value (Choice value)
-  where
+instance Possibilities value (Choice value) where
     possibilities (Choice x y) = pure (liftA2 (<|>)) <*> possibilities x <*> possibilities y
 
-instance Possibilities value (NontrivialSum value)
-  where
+instance Possibilities value (NontrivialSum value) where
     possibilities = \case
       ConsiderOneVar x -> fmap (either (\e -> (toSumFailure e, empty)) (\a -> (mempty, pure a))) $ read x
       ConsiderManyVars x -> possibilities x
 
-instance Possibilities value (Sum value)
-  where
+instance Possibilities value (Sum value) where
     possibilities = \case
       ConsiderNoVars -> pure (mempty, empty)
       ConsiderSomeVars x -> possibilities x
