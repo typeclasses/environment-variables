@@ -7,7 +7,7 @@
     OverloadedStrings, PatternSynonyms, ViewPatterns
 #-}
 
-module Env.Problems
+module Env.Problems'
   (
     -- * Types
     Problem (..),
@@ -28,7 +28,7 @@ module Env.Problems
 
   ) where
 
-import Env.Name
+import Env.Name'
 
 import Data.Data (Data)
 import Data.Eq (Eq, (==))

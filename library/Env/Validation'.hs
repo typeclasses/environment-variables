@@ -6,7 +6,7 @@
     PatternSynonyms, StandaloneDeriving
 #-}
 
-module Env.Validation
+module Env.Validation'
   (
     -- * Aliases for Either
     type Validation, pattern Success, pattern Failure

@@ -2,12 +2,12 @@
 
 {-# language
     DeriveAnyClass, DeriveDataTypeable, DeriveFunctor,
-    DeriveGeneric, DerivingStrategies,
+    DeriveGeneric, DerivingStrategies, ExplicitNamespaces,
     GeneralizedNewtypeDeriving, NoImplicitPrelude,
     PatternSynonyms, ViewPatterns
 #-}
 
-module Env.Name where
+module Env.Name' (type Name, pattern NameText, pattern NameString) where
 
 import Data.Data (Data)
 import Data.Eq (Eq)

@@ -14,7 +14,7 @@ module Env.Environment
     getEnvironment
   ) where
 
-import Env.Name
+import Env.Name'
 
 import Data.Data (Data)
 import Data.Eq (Eq)

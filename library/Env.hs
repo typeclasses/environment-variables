@@ -39,9 +39,9 @@ module Env
   ) where
 
 import Env.Environment
-import Env.Name
-import Env.Problems
-import Env.Validation
+import Env.Problems'
+import Env.Types'
+import Env.Validation'
 
 import Control.Applicative (Alternative (empty, (<|>)))
 import Control.Applicative (Applicative (pure, liftA2))
@@ -53,7 +53,7 @@ import Data.Function ((.), ($), id)
 import Data.Functor (Functor (..), fmap)
 import Data.Maybe (Maybe (..), fromMaybe, maybe)
 import Data.Monoid (Monoid (mempty))
-import Data.Semigroup (Semigroup, (<>))
+import Data.Semigroup ((<>))
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Void (Void)
@@ -63,59 +63,6 @@ import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified System.Environment as Sys
-
-
----  🌟 Types for reading environment variables 🌟  ---
-
--- | How to parse the text of an environment variable into some perhaps more meaningful value
-type Parser a = Text -> Maybe a
-
--- | Value to use instead of applying the parser if the name is not present in the environment
-type Default a = a
-
--- | A text environment variable, with a default value if not present
-data NameWithDefault = NameWithDefault Name (Default Text)
-
--- | A single required environment variable
-data Required value = Required Name (Parser value)
-
--- | A single optional environment variable
-data Optional value = Optional Name (Default value) (Parser value)
-
--- | A single environment variable
-data Var value = Var Name (Maybe (Default value)) (Parser value)
-
--- | The product of multiplying two or more environment variables
-data Composite value = forall arg. Composite (NontrivialProduct (arg -> value)) (NontrivialProduct arg)
-
--- | The product of multiplying one or more environment variables
-data NontrivialProduct value = UseOneVar (Var value) | UseManyVars (Composite value)
-
--- | The product of multiplying any number of environment variables
-data Product value = UseNoVars value | UseSomeVars (NontrivialProduct value)
-
--- | The sum of adding two or more environment variables
-data Choice value = Choice (NontrivialSum value) (NontrivialSum value)
-
--- | The sum of adding one or more environment variables
-data NontrivialSum value = ConsiderOneVar (Required value) | ConsiderManyVars (Choice value)
-
--- | The sum of adding any number of environment variables
-data Sum value = ConsiderNoVars | ConsiderSomeVars (NontrivialSum value)
-
-
----  🌟 Functor instances for environment variable types 🌟  ---
-
-deriving stock instance Functor Choice
-deriving stock instance Functor Composite
-deriving stock instance Functor NontrivialProduct
-deriving stock instance Functor NontrivialSum
-deriving stock instance Functor Optional
-deriving stock instance Functor Product
-deriving stock instance Functor Required
-deriving stock instance Functor Sum
-deriving stock instance Functor Var
-
 
 ---
 
@@ -135,34 +82,6 @@ instance Context IO where
 
 instance Context ((->) Environment) where
     lookup n (EnvironmentMap m) = Map.lookup n m
-
----
-
-multiply :: forall a b. Product (a -> b) -> Product a -> Product b
-UseNoVars   f `multiply` UseNoVars   x = UseNoVars (f x)
-UseSomeVars f `multiply` UseSomeVars x = UseSomeVars (UseManyVars (Composite f x))
-UseSomeVars f `multiply` UseNoVars   x = UseSomeVars (fmap ($ x) f)
-UseNoVars   f `multiply` UseSomeVars x = UseSomeVars (fmap f x)
-
-instance Applicative Product where
-    pure = UseNoVars
-    (<*>) = multiply
-
----
-
-instance Semigroup (Choice a) where
-    x <> y = Choice (ConsiderManyVars x) (ConsiderManyVars y)
-
-instance Semigroup (NontrivialSum a) where
-    x <> y = ConsiderManyVars (Choice x y)
-
-instance Semigroup (Sum a) where
-    ConsiderNoVars <> x = x
-    x <> ConsiderNoVars = x
-    ConsiderSomeVars x <> ConsiderSomeVars y = ConsiderSomeVars (x <> y)
-
-instance Monoid (Sum a) where
-    mempty = ConsiderNoVars
 
 ---
 
