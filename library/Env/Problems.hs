@@ -67,11 +67,11 @@ data OneFailure = OneFailure Problem Name
     deriving stock (Eq, Ord, Show)
 
 -- | Some number of environment variables that all have problems
-newtype ProductFailure = ProductFailureMap { productFailureMap :: Map Name Problem }
+newtype ProductFailure = ProductFailureMap (Map Name Problem)
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
-newtype SumFailure = SumFailureMap { sumFailureMap :: Map Name Problem }
+newtype SumFailure = SumFailureMap (Map Name Problem)
     deriving stock (Eq, Ord, Show)
     deriving newtype (Semigroup, Monoid)
 
@@ -79,13 +79,13 @@ newtype SumFailure = SumFailureMap { sumFailureMap :: Map Name Problem }
 ---  🌟 Pattern synonyms 🌟  ---
 
 pattern ProductFailureList :: [OneFailure] -> ProductFailure
-pattern ProductFailureList xs <- (List.map (\(n, p) -> OneFailure p n) . Map.toList . productFailureMap -> xs)
+pattern ProductFailureList xs <- ProductFailureMap (List.map (\(n, p) -> OneFailure p n) . Map.toList -> xs)
   where
     ProductFailureList = ProductFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
 {-# COMPLETE ProductFailureList #-}
 
 pattern SumFailureList :: [OneFailure] -> SumFailure
-pattern SumFailureList xs <- (List.map (\(n, p) -> OneFailure p n) . Map.toList . sumFailureMap -> xs)
+pattern SumFailureList xs <- SumFailureMap (List.map (\(n, p) -> OneFailure p n) . Map.toList -> xs)
   where
     SumFailureList = SumFailureMap . Map.fromList . List.map (\(OneFailure p n) -> (n, p))
 {-# COMPLETE SumFailureList #-}
