@@ -54,28 +54,22 @@ oneDemoOutput Demo{ demoEnv = DemoEnv{ demoEnvName, demoEnvironment }, demoVar =
     "read " <> showDemoVar v <> " " <> TextBuilder.fromText demoEnvName <> " = " <>
     either Env.errorMessageBuilder (TextBuilder.fromString . show) (Env.read v demoEnvironment)
 
-class DemoVar var
-  where
+class DemoVar var where
     showDemoVar :: var -> TextBuilder.Builder
 
-instance DemoVar Env.Name
-  where
+instance DemoVar Env.Name where
     showDemoVar (Env.NameText x) = TextBuilder.fromText x
 
-instance Show a => DemoVar (Env.Required a)
-  where
+instance Show a => DemoVar (Env.Required a) where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar (Env.Optional a)
-  where
+instance Show a => DemoVar (Env.Optional a) where
     showDemoVar (Env.name -> x) = showDemoVar x
 
-instance Show a => DemoVar (Env.Product a)
-  where
+instance Show a => DemoVar (Env.Product a) where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " * " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
-instance Show a => DemoVar (Env.Sum a)
-  where
+instance Show a => DemoVar (Env.Sum a) where
     showDemoVar = (\x -> "(" <> x <> ")") . fold . List.intersperse " + " . List.map (\(Env.NameText x) -> TextBuilder.fromText x) . toList . Env.nameSet
 
 data Demo = Demo{ demoEnv :: DemoEnv, demoVar :: V }
