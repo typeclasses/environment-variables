@@ -29,9 +29,9 @@ module Env
     -- ** Classes
     Addend (..), IsProduct (..), IsVar (..), HasNameSet (..),
     -- * Using vars
-    Readable (..), Context (..),
+    readOrFail, test, Readable (..), Context (..),
     -- * What can go wrong
-    ProductFailure, pattern ProductFailureList, OneFailure (..), Problem (..), HasErrorMessage (..),
+    ProductFailure, pattern ProductFailureList, OneFailure (..), Problem (..), HasErrorMessage (..), Missing, Invalid,
     -- * Re-exports
     -- ** Text
     -- $text
@@ -47,6 +47,7 @@ import Control.Applicative (Alternative (empty, (<|>)))
 import Control.Applicative (Applicative (pure, liftA2))
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad ((>>=))
+import Control.Monad (MonadFail, fail)
 import Data.Bifunctor (bimap)
 import Data.Either (Either, either)
 import Data.Function ((.), ($), id)
@@ -58,6 +59,7 @@ import Data.Set (Set)
 import Data.Text (Text)
 import Data.Void (Void)
 import System.IO (IO)
+import Text.Show (Show, show)
 
 import qualified Data.Text as Text
 import qualified Data.Map.Strict as Map
@@ -109,6 +111,12 @@ optionalAlternative :: Alternative f => Required a -> Optional (f a)
 optionalAlternative (Required x f) = Optional x empty (fmap pure . f)
 
 ---
+
+readOrFail :: (Context m, MonadFail m, Readable value error var, HasErrorMessage error) => var -> m value
+readOrFail v = read v >>= either (fail . errorMessageString) pure
+
+test :: (Context m, Readable value error var, HasErrorMessage error, Show value) => var -> m Text
+test v = fmap (either errorMessageText (Text.pack . show)) (read v)
 
 {- | Type parameters:
 

@@ -39,7 +39,7 @@ import Data.Map (Map)
 import Data.Monoid (Monoid)
 import Data.Ord (Ord, (>=))
 import Data.Semigroup (Semigroup, (<>))
-import Data.String (IsString)
+import Data.String (String, IsString)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Prelude (Enum, Bounded, error)
@@ -181,6 +181,9 @@ class HasErrorMessage a
 
     errorMessageText :: a -> Text
     errorMessageText = LazyText.toStrict . TextBuilder.toLazyText . errorMessageBuilder
+
+    errorMessageString :: a -> String
+    errorMessageString = LazyText.unpack . TextBuilder.toLazyText . errorMessageBuilder
 
 instance HasErrorMessage Missing
   where

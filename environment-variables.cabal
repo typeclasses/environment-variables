@@ -43,19 +43,19 @@ library
     other-modules: Env.Name', Env.Problems', Env.Types', Env.Validation'
     build-depends: base, containers, hashable, text
 
--- Generates the demo output file `demo/demo.txt`.
-executable run-demo
+-- Generates the demo output file `tutorial/output.txt`
+executable tutorial
     default-language: Haskell2010
-    hs-source-dirs: demo
+    hs-source-dirs: tutorial
     main-is: run.hs
-    other-modules: Demo.Environments, Demo.Output, Demo.Vars
+    other-modules: Tutorial
     build-depends: base, bytestring, containers, environment-variables, hashable, text
 
--- Asserts that the demo output is the same as what's in `demo/demo.txt`.
-test-suite test-demo
+-- Asserts that the tutorial output is the same as what's in `tutorial/output.txt`
+test-suite test-tutorial
     type: exitcode-stdio-1.0
     default-language: Haskell2010
-    hs-source-dirs: demo
+    hs-source-dirs: tutorial
     main-is: test.hs
-    other-modules: Demo.Environments, Demo.Output, Demo.Vars
+    other-modules: Tutorial
     build-depends: base, bytestring, containers, environment-variables, hashable, text

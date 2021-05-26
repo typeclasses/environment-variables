@@ -1,6 +1,6 @@
 {-# language NoImplicitPrelude #-}
 
-import Demo.Output
+import Tutorial
 
 import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad (when, (=<<))
@@ -12,7 +12,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text.Lazy.Encoding as LazyText
 
 main :: IO ()
-main = test (LazyText.encodeUtf8 demoOutput) =<< LBS.readFile "demo/demo.txt"
-
-test :: Eq a => a -> a -> IO ()
-test x y = when (x /= y) exitFailure
+main =
+  do
+    x <- LBS.readFile "tutorial/output.txt"
+    when (x /= LazyText.encodeUtf8 tutorial) exitFailure
