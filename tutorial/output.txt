@@ -1,1 +1,5 @@
+chris
+
+Environment variable ‘USER’ is missing.
+
 "chris"

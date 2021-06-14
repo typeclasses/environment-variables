@@ -30,8 +30,13 @@ If you don't care to deal with the situation in which the variable is missing, y
 
 For the demonstrations in this tutorial, we will read from mock environments instead of working with ‘IO’. The same polymorphic ‘read’ function we used above also works in this situation.
 
-> userEither :: Either Missing Text
-> userEither = Env.read user $ EnvironmentList [ Item "USER" "chris" ]
+> userEither1 :: Either Missing Text
+> userEither1 = Env.read user $ EnvironmentList [ Item "USER" "chris" ]
+
+This expression evaluates to `Right "Chris"`. If the environment variable were *not* present — such as in the following example where we attempt to read the same variable from an empty environment — we get a `Left` result instead.
+
+> userEither2 :: Either Missing Text
+> userEither2 = Env.read user $ EnvironmentList []
 
 > user1 :: Text
 > user1 = Env.test user $ EnvironmentList [ Item "USER" "chris" ]
@@ -39,5 +44,8 @@ For the demonstrations in this tutorial, we will read from mock environments ins
 > tutorial :: LT.Text
 > tutorial =
 >   TB.toLazyText $ Foldable.fold $
->     List.intersperse "\n\n" $ List.map TB.fromText
->       [ userEither, user1 ]
+>     List.intersperse "\n\n" $
+>       [ either errorMessageBuilder TB.fromText userEither1
+>       , either errorMessageBuilder TB.fromText userEither2
+>       , TB.fromText user1
+>       ]
