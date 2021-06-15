@@ -1,15 +1,9 @@
 > {-# options_ghc -Wall -fno-warn-unused-top-binds #-}
-> {-# language OverloadedStrings #-}
->
-> module Tutorial (tutorial) where
+> {-# language OverloadedStrings, TemplateHaskell #-}
 >
 > import Env
 > import Env.Environment
->
-> import qualified Data.Foldable as Foldable
-> import qualified Data.List as List
-> import qualified Data.Text.Lazy as LT
-> import qualified Data.Text.Lazy.Builder as TB
+> import Debug.Trace.LocationTH
 
 In a typical shell environment, you likely have an environment variable named ‘USER’ that tells you the name of the account that is currently logged in.
 
@@ -31,21 +25,22 @@ If you don't care to deal with the situation in which the variable is missing, y
 For the demonstrations in this tutorial, we will read from mock environments instead of working with ‘IO’. The same polymorphic ‘read’ function we used above also works in this situation.
 
 > userEither1 :: Either Missing Text
-> userEither1 = Env.read user $ EnvironmentList [ Item "USER" "chris" ]
+> userEither1 = $(assert [| x == Right "chris" |]) x
+>   where
+>     x = Env.read user env
+>     env = EnvironmentList [ Item "USER" "chris" ]
 
 This expression evaluates to `Right "Chris"`. If the environment variable were *not* present — such as in the following example where we attempt to read the same variable from an empty environment — we get a `Left` result instead.
 
 > userEither2 :: Either Missing Text
-> userEither2 = Env.read user $ EnvironmentList []
+> userEither2 = $(assert [| x == Left (Missing "USER") |]) x
+>   where
+>     x = Env.read user env
+>     env = EnvironmentList []
 
-> user1 :: Text
-> user1 = Env.test user $ EnvironmentList [ Item "USER" "chris" ]
+-----------------------------------------------------------
 
-> tutorial :: LT.Text
-> tutorial =
->   TB.toLazyText $ Foldable.fold $
->     List.intersperse "\n\n" $
->       [ either errorMessageBuilder TB.fromText userEither1
->       , either errorMessageBuilder TB.fromText userEither2
->       , TB.fromText user1
->       ]
+> main :: IO ()
+> main = f userEither1 <> f userEither2
+>   where
+>     f = print

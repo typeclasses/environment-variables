@@ -53,9 +53,9 @@ import qualified Data.Map.Strict as Map
 
 ---  🌟 Types 🌟  ---
 
-data Missing = Missing Name
+data Missing = Missing Name deriving (Eq, Ord, Show, Data, Generic)
 
-data Invalid = Invalid Name
+data Invalid = Invalid Name deriving (Eq, Ord, Show, Data, Generic)
 
 -- | Things that can go wrong with a single environment variable
 data Problem = VarMissing | VarInvalid
@@ -64,7 +64,7 @@ data Problem = VarMissing | VarInvalid
 
 -- | The name of a single problematic environment variable, and what is wrong with it
 data OneFailure = OneFailure Problem Name
-    deriving stock (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show, Data, Generic)
 
 -- | Some number of environment variables that all have problems
 newtype ProductFailure = ProductFailureMap (Map Name Problem)
